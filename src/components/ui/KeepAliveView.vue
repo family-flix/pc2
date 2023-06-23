@@ -2,7 +2,7 @@
 /**
  * @file 不销毁的路由视图
  */
-import { ref, defineProps, onMounted, toRefs } from "vue";
+import { ref, onMounted, toRefs } from "vue";
 
 import { RouteViewCore } from "@/domains/route_view";
 import { cn } from "@/utils";

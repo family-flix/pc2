@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, defineComponent } from "vue";
+import { onMounted, ref, defineComponent } from "vue";
 
 import RouteStackView from "@/components/ui/RouteStackView.vue";
 import { connect } from "@/domains/app/connect.web";
@@ -119,7 +119,7 @@ const className = cn(
 <template>
   <div class="screen w-screen h-screen bg-white">
     <route-stack-view
-      v-for="view in subViews"
+      v-for="(view, index) in subViews"
       :key="view.id"
       :store="view"
       :className="className"

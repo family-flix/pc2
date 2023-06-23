@@ -58,8 +58,11 @@ const buttonVariants = cva(
   }
 );
 const className = buttonVariants({
+  // @ts-ignore
   variant: props.variant,
+  // @ts-ignore
   size: props.size,
+  // @ts-ignore
   class: cn(props.class, "space-x-2"),
 });
 </script>

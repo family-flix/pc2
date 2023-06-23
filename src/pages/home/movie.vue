@@ -28,7 +28,7 @@ movieList.onStateChange((nextResponse) => {
 
 movieList.init();
 
-function gotoMoviePlaying(movie) {
+function gotoMoviePlaying(movie: { id: string }) {
   const { id } = movie;
   router.push(`/movie/play/${id}`);
 }

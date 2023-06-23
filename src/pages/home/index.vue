@@ -26,7 +26,7 @@ tvList.onStateChange((nextResponse) => {
 
 tvList.init();
 
-function gotoTVPlaying(tv) {
+function gotoTVPlaying(tv: { id: string }) {
   const { id } = tv;
   router.push(`/tv/play/${id}`);
 }

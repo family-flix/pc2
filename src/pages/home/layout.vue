@@ -143,7 +143,7 @@ view.checkMatch(router._pending);
     >
       <div class="flex-1 h-full">
         <KeepAliveView
-          v-for="subView in subViews"
+          v-for="(subView, index) in subViews"
           key="id"
           class="absolute inset-0 w-full h-full"
           :store="subView"

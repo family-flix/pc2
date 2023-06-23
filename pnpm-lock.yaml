@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@types/lodash': ^4.14.195
   '@types/node': ^20.3.1
+  '@types/qs': ^6.9.7
   '@vitejs/plugin-vue': ^4.1.0
   autoprefixer: ^10.4.14
   axios: ^1.4.0
@@ -10,7 +11,6 @@ specifiers:
   dayjs: ^1.11.8
   hls.js: ^1.4.6
   lodash: ^4.17.21
-  lucide-vue: ^0.252.0
   mitt: ^3.0.0
   nzh: ^1.0.9
   path-to-regexp: ^6.2.1
@@ -29,7 +29,6 @@ dependencies:
   dayjs: registry.npmmirror.com/dayjs/1.11.8
   hls.js: registry.npmmirror.com/hls.js/1.4.6
   lodash: registry.npmmirror.com/lodash/4.17.21
-  lucide-vue: registry.npmmirror.com/lucide-vue/0.252.0_vue@3.3.4
   mitt: registry.npmmirror.com/mitt/3.0.0
   nzh: registry.npmmirror.com/nzh/1.0.9
   path-to-regexp: registry.npmmirror.com/path-to-regexp/6.2.1
@@ -40,6 +39,7 @@ dependencies:
 devDependencies:
   '@types/lodash': registry.npmmirror.com/@types/lodash/4.14.195
   '@types/node': registry.npmmirror.com/@types/node/20.3.1
+  '@types/qs': registry.npmmirror.com/@types/qs/6.9.7
   '@vitejs/plugin-vue': registry.npmmirror.com/@vitejs/plugin-vue/4.2.3_vite@4.3.9+vue@3.3.4
   autoprefixer: registry.npmmirror.com/autoprefixer/10.4.14_postcss@8.4.24
   postcss: registry.npmmirror.com/postcss/8.4.24
@@ -412,6 +412,12 @@ packages:
     resolution: {integrity: sha512-EhcH/wvidPy1WeML3TtYFGR83UzjxeWRen9V402T8aUGYsCHOmfoisV3ZSg03gAFIbLq8TnWOJ0f4cALtnSEUg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/node/-/node-20.3.1.tgz}
     name: '@types/node'
     version: 20.3.1
+    dev: true
+
+  registry.npmmirror.com/@types/qs/6.9.7:
+    resolution: {integrity: sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/qs/-/qs-6.9.7.tgz}
+    name: '@types/qs'
+    version: 6.9.7
     dev: true
 
   registry.npmmirror.com/@vitejs/plugin-vue/4.2.3_vite@4.3.9+vue@3.3.4:
@@ -1114,17 +1120,6 @@ packages:
     dependencies:
       yallist: registry.npmmirror.com/yallist/4.0.0
     dev: true
-
-  registry.npmmirror.com/lucide-vue/0.252.0_vue@3.3.4:
-    resolution: {integrity: sha512-9eh1nwmfIgjBnzqAfUtcTg1b2DhBFH0TAvW/QTJXzmnEmO8iXN46bNYd9u/v3+CikouMjmeN9HQpAMBP+5oVkg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/lucide-vue/-/lucide-vue-0.252.0.tgz}
-    id: registry.npmmirror.com/lucide-vue/0.252.0
-    name: lucide-vue
-    version: 0.252.0
-    peerDependencies:
-      vue: ^2.6.12
-    dependencies:
-      vue: registry.npmmirror.com/vue/3.3.4
-    dev: false
 
   registry.npmmirror.com/magic-string/0.30.0:
     resolution: {integrity: sha512-LA+31JYDJLs82r2ScLrlz1GjSgu66ZV518eyWT+S8VhyQn/JL0u9MeBOvQMGYiPk1DBiSN9DDMOcXvigJZaViQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/magic-string/-/magic-string-0.30.0.tgz}

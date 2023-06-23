@@ -39,7 +39,7 @@ export class ToastCore extends BaseDomain<TheTypesOfEvents> {
 
   present: PresenceCore;
   delay = 1200;
-  timer: NodeJS.Timeout | null = null;
+  timer: ReturnType<typeof setTimeout> | null = null;
   open = false;
 
   state: ToastState = {

@@ -27,8 +27,7 @@ const video = new ElementCore({});
 const response = ref(helper.response);
 const profile = ref(movie.profile);
 const curSource = ref(movie.curSource);
-const _player = ref(player);
-function changeSource(source) {
+function changeSource(source: { file_id: string }) {
   movie.changeSource(source);
 }
 
@@ -154,7 +153,7 @@ movie.fetchProfile(view.params.id);
 <template>
   <div class="flex flex-wrap">
     <div class="p-4 w-[980px] h-[580px] bg-black">
-      <Video :store="_player"></Video>
+      <Video :store="player"></Video>
     </div>
     <div class="profile flex-1 p-4">
       <div v-if="profile">

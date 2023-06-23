@@ -48,7 +48,7 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
   presence: PresenceCore;
   layer: DismissableLayerCore;
 
-  openTimer: NodeJS.Timeout | null = null;
+  openTimer: ReturnType<typeof setTimeout> | null = null;
   state: MenuState = {
     open: false,
     items: [],
@@ -104,7 +104,7 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
   inSubMenu = false;
   /** 鼠标离开 item 时，可能要隐藏子菜单，但是如果从有子菜单的 item 离开前往子菜单，就不用隐藏 */
   maybeHideSub = false;
-  hideSubTimer: NodeJS.Timeout | null = null;
+  hideSubTimer: ReturnType<typeof setTimeout> | null = null;
 
   toggle() {
     const { open } = this.state;
@@ -200,7 +200,13 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
     if (this.maybeHideSub === false) {
       return;
     }
-    console.log(...this.log("leaveMenu check need hide subMenu", this.curSub, this.inSubMenu));
+    console.log(
+      ...this.log(
+        "leaveMenu check need hide subMenu",
+        this.curSub,
+        this.inSubMenu
+      )
+    );
     // this.emit(Events.LeaveMenu);
     // 直接从有 SubMenu 的 MenuItem 离开，不到其他 MenuItem 场景下，也要关闭 SubMenu
     if (this.curSub && !this.inSubMenu) {

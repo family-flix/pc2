@@ -33,14 +33,14 @@ store.onStateChange((nextState) => {
   state.value = nextState;
 });
 
-const { mounted, visible } = toRefs(state);
+// const { mounted, visible } = toRefs(state);
 </script>
 
 <template>
   <div
     :class="className"
-    :style="{ zIndex: index }"
-    :data-state="visible ? 'open' : 'closed'"
+    :style="{ 'z-index': index }"
+    :data-state="state.visible ? 'open' : 'closed'"
   >
     <slot></slot>
   </div>

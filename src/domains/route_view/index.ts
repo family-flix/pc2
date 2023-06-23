@@ -99,7 +99,7 @@ export class RouteViewCore extends BaseDomain<TheTypesOfEvents> {
   /** 当前访问地址 */
   // url: string;
   component: unknown;
-  presence = new PresenceCore();
+  presence: PresenceCore = new PresenceCore();
   // keepAlive = false;
 
   isMounted = false;
@@ -142,8 +142,22 @@ export class RouteViewCore extends BaseDomain<TheTypesOfEvents> {
   }
 
   /** 判断给定的 pathname 是否有匹配的内容 */
-  async checkMatch({ pathname, type }: { pathname: string; type: RouteAction }) {
-    console.log(...this.log("checkMatch - ", this.title, pathname, this.configs, this.subViews));
+  async checkMatch({
+    pathname,
+    type,
+  }: {
+    pathname: string;
+    type: RouteAction;
+  }) {
+    console.log(
+      ...this.log(
+        "checkMatch - ",
+        this.title,
+        pathname,
+        this.configs,
+        this.subViews
+      )
+    );
     if (this.configs.length === 0) {
       return Result.Err("未配置子视图");
     }
@@ -199,80 +213,80 @@ export class RouteViewCore extends BaseDomain<TheTypesOfEvents> {
     this.emit(Events.ViewsChange, [...this.subViews]);
     this.curView.show();
   }
-  private setSubViews(
-    subView: RouteViewCore,
-    extra: {
-      pathname: string;
-      type: RouteAction;
-      query: Record<string, string>;
-      params: Record<string, string>;
-    }
-  ) {
-    this.log("setSubViews", this.title, subView);
-    const { pathname, type, query, params } = extra;
-    const prevView = this.curView;
-    this.curView = subView;
-    this.emit(Events.CurViewChange, subView);
-    const cloneViews = this.subViews;
-    // 已经在 / layout，当路由改变时，仍然响应，并且查找到了 / layout，就可能重复添加，这里做个判断，避免了重复添加
-    // this.log("setSubViews -", this.title, "check", subView.title, "existing", existing);
+  // private setSubViews(
+  //   subView: RouteViewCore,
+  //   extra: {
+  //     pathname: string;
+  //     type: RouteAction;
+  //     query: Record<string, string>;
+  //     params: Record<string, string>;
+  //   }
+  // ) {
+  //   this.log("setSubViews", this.title, subView);
+  //   const { pathname, type, query, params } = extra;
+  //   const prevView = this.curView;
+  //   this.curView = subView;
+  //   this.emit(Events.CurViewChange, subView);
+  //   const cloneViews = this.subViews;
+  //   // 已经在 / layout，当路由改变时，仍然响应，并且查找到了 / layout，就可能重复添加，这里做个判断，避免了重复添加
+  //   // this.log("setSubViews -", this.title, "check", subView.title, "existing", existing);
 
-    const nextSubViews = (() => {
-      const existing = this.subViews.includes(subView);
-      if (existing) {
-        // if (type === "back") {
-        //   return cloneViews.slice(0, cloneViews.length - 1);
-        // }
-        return cloneViews;
-      }
-      if (type === "initialize") {
-        return cloneViews.concat(subView);
-      }
-      if (type === "push") {
-        return cloneViews.concat(subView);
-      }
-      // if (type === "replace" && !this.keepAlive) {
-      //   return cloneViews.slice(0, cloneViews.length - 1).concat(subView);
-      // }
-      if (type === "forward") {
-        return cloneViews.concat(subView);
-      }
-      if (type === "back") {
-        return cloneViews.slice(0, cloneViews.length - 1);
-      }
-      return cloneViews;
-    })();
-    this.log("next sub views", nextSubViews);
-    (() => {
-      if (type === "back") {
-        if (prevView) {
-          prevView.hide();
-          setTimeout(() => {
-            this.subViews = nextSubViews;
-            this.emit(Events.ViewsChange, [...this.subViews]);
-          }, 800);
-        }
-        subView.show();
-        return;
-      }
-      this.subViews = nextSubViews;
-      this.emit(Events.ViewsChange, [...this.subViews]);
-      for (let i = 0; i < nextSubViews.length; i += 1) {
-        const v = nextSubViews[i];
-        if (v === subView) {
-          this.log(this.title, "show subView", v.title);
-          v.show();
-          continue;
-        }
-        this.log(this.title, "hide subView", v.title);
-        // if (!this.keepAlive) {
-        //   v.hide();
-        // }
-      }
-    })();
-    // @todo 判断 query 是否改变，触发特定事件
-    // subView.checkMatch({ pathname, type });
-  }
+  //   const nextSubViews = (() => {
+  //     const existing = this.subViews.includes(subView);
+  //     if (existing) {
+  //       // if (type === "back") {
+  //       //   return cloneViews.slice(0, cloneViews.length - 1);
+  //       // }
+  //       return cloneViews;
+  //     }
+  //     if (type === "initialize") {
+  //       return cloneViews.concat(subView);
+  //     }
+  //     if (type === "push") {
+  //       return cloneViews.concat(subView);
+  //     }
+  //     // if (type === "replace" && !this.keepAlive) {
+  //     //   return cloneViews.slice(0, cloneViews.length - 1).concat(subView);
+  //     // }
+  //     if (type === "forward") {
+  //       return cloneViews.concat(subView);
+  //     }
+  //     if (type === "back") {
+  //       return cloneViews.slice(0, cloneViews.length - 1);
+  //     }
+  //     return cloneViews;
+  //   })();
+  //   this.log("next sub views", nextSubViews);
+  //   (() => {
+  //     if (type === "back") {
+  //       if (prevView) {
+  //         prevView.hide();
+  //         setTimeout(() => {
+  //           this.subViews = nextSubViews;
+  //           this.emit(Events.ViewsChange, [...this.subViews]);
+  //         }, 800);
+  //       }
+  //       subView.show();
+  //       return;
+  //     }
+  //     this.subViews = nextSubViews;
+  //     this.emit(Events.ViewsChange, [...this.subViews]);
+  //     for (let i = 0; i < nextSubViews.length; i += 1) {
+  //       const v = nextSubViews[i];
+  //       if (v === subView) {
+  //         this.log(this.title, "show subView", v.title);
+  //         v.show();
+  //         continue;
+  //       }
+  //       this.log(this.title, "hide subView", v.title);
+  //       // if (!this.keepAlive) {
+  //       //   v.hide();
+  //       // }
+  //     }
+  //   })();
+  //   // @todo 判断 query 是否改变，触发特定事件
+  //   // subView.checkMatch({ pathname, type });
+  // }
   appendSubView(view: RouteViewCore) {
     if (this.subViews.includes(view)) {
       return;
@@ -413,7 +427,11 @@ type ParamConfigure = {
   pattern: string;
   modifier: string;
 };
-function buildParams(opt: { regexp: RegExp; targetPath: string; keys: ParamConfigure[] }) {
+function buildParams(opt: {
+  regexp: RegExp;
+  targetPath: string;
+  keys: ParamConfigure[];
+}) {
   const { regexp, keys, targetPath } = opt;
   const match = regexp.exec(targetPath);
   if (match) {

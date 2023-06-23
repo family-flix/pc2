@@ -27,11 +27,10 @@ const video = new ElementCore({});
 const response = ref(helper.response);
 const profile = ref(tv.profile);
 const source = ref(tv.curSource);
-const _player = ref(player);
-function fetchEpisodesOfSeason(season) {
+function fetchEpisodesOfSeason(season: any) {
   tv.fetchEpisodesOfSeason(season);
 }
-function playEpisode(episode) {
+function playEpisode(episode: any) {
   tv.playEpisode(episode);
 }
 
@@ -52,9 +51,9 @@ view.onHidden(() => {
 // view.onUnmounted(() => {
 //   player.destroy();
 // });
-video.onMounted(() => {
-  connect(videoRef.current!, player);
-});
+// video.onMounted(() => {
+//   connect(videoRef.current!, player);
+// });
 
 tv.onProfileLoaded((profile) => {
   app.setTitle(tv.getTitle().join(" - "));
@@ -166,7 +165,7 @@ tv.fetchProfile(view.params.id);
 <template>
   <div class="flex flex-wrap">
     <div class="p-4 w-[980px]">
-      <Video :store="_player"></Video>
+      <Video :store="player"></Video>
     </div>
     <div class="profile flex-1 p-4">
       <div v-if="profile">

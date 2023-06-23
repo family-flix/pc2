@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, toRefs, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 
 import { PlayerCore } from "@/domains/player";
 import { connect } from "@/domains/player/connect.web";
 
 const { store } = defineProps<{ store: PlayerCore }>();
-const videoRef = ref<HTMLVideoElement>(null);
+const videoRef = ref<HTMLVideoElement | null>(null);
 
 const state = ref(store.state);
 
@@ -21,7 +21,7 @@ onMounted(() => {
   store.setMounted();
   connect($video, store);
 });
-const { width, height, ready, poster } = toRefs(state);
+// const { width, height, ready, poster } = toRefs(state);
 </script>
 
 <template>
@@ -29,8 +29,8 @@ const { width, height, ready, poster } = toRefs(state);
     <video
       ref="videoRef"
       class="w-full relative z-10"
-      :poster="poster"
-      :height="height"
+      :poster="state.poster"
+      :height="state.height"
       :controls="true"
       :webkit-playsinline="true"
       :playsInline="true"
