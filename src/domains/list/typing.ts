@@ -80,13 +80,19 @@ export type OriginalResponseProcessor = <T>(
  * 响应处理器
  */
 export type ResponseProcessor = <T>(
-  response: Omit<Response<T>, "dataSource" | "page" | "pageSize" | "noMore" | "error">,
+  response: Omit<
+    Response<T>,
+    "dataSource" | "page" | "pageSize" | "noMore" | "error"
+  >,
   originalResponse: OriginalResponse
 ) => Omit<Response<T>, "dataSource" | "page" | "pageSize" | "noMore" | "error">;
 /**
  * 参数处理器
  */
-export type ParamsProcessor = (params: FetchParams, currentParams: any) => FetchParams;
+export type ParamsProcessor = (
+  params: FetchParams,
+  currentParams: any
+) => FetchParams;
 export interface ListProps<T> {
   /**
    * 是否打开 debug
@@ -106,7 +112,10 @@ export interface ListProps<T> {
    * 响应处理器
    * 建议在 service 函数中直接处理
    */
-  processor?: <T>(response: Response<T>, originalResponse: OriginalResponse) => Response<T>;
+  processor?: <T>(
+    response: Response<T>,
+    originalResponse: OriginalResponse
+  ) => Response<T>;
   /**
    * 默认已存在的数据
    */
@@ -127,4 +136,8 @@ export interface ListProps<T> {
    * 额外的默认 response
    */
   extraDefaultResponse?: Record<string, unknown>;
+  /** 初始状态，默认该值为 true，可以通过该值判断是否展示骨架屏 */
+  initial?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
+  onStateChange?: (state: Response<T>) => void;
 }

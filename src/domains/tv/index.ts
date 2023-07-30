@@ -109,7 +109,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
   curSource: MediaSourceProfile | null = null;
   /** 当前影片播放进度 */
   currentTime = 0;
-  curResolutionType: EpisodeResolutionTypes = "LD";
+  curResolutionType: EpisodeResolutionTypes = "HD";
   /** 正在请求中（获取详情、视频源信息等） */
   private _pending = false;
 
@@ -122,14 +122,17 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     // this.curEpisode = profile.curEpisode;
   }
 
-  async fetchProfile(id: string) {
+  async fetchProfile(id: string, extra: { season_id?: string } = {}) {
     if (id === undefined) {
       const msg = this.tip({ text: ["缺少 tv id 参数"] });
       return Result.Err(msg);
       // return Result.Err("缺少电视剧 id");
     }
     this.id = id;
-    const res = await fetch_tv_and_cur_episode({ tv_id: id });
+    const res = await fetch_tv_and_cur_episode({
+      tv_id: id,
+      season_id: extra.season_id,
+    });
     if (res.error) {
       const msg = this.tip({ text: ["获取电视剧详情失败", res.error.message] });
       // return Result.Err(res.error);
@@ -140,6 +143,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     // this.emit(Events.ProfileLoaded, { ...this.profile });
     const { name, overview, curSeason, curEpisode, curEpisodes, seasons } =
       res.data;
+    // console.log("[DOMAIN]tv/index - after fetchTVProfile", curEpisodes);
     if (curEpisode === null) {
       const msg = this.tip({ text: ["该电视剧尚未收录影片"] });
       // return Result.Err("该电视剧尚未收录影片");
@@ -183,6 +187,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     }
     const res = await fetch_episode_profile({
       id: episodeId,
+      type: this.curResolutionType,
     });
     if (res.error) {
       this.tip({

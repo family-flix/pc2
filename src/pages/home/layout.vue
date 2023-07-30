@@ -9,7 +9,7 @@ import { ViewComponent } from "@/types/index";
 import KeepAliveView from "@/components/ui/KeepAliveView.vue";
 
 // const props = defineProps<ViewComponent>();
-const { view, router } = defineProps<{
+const { app, view, router } = defineProps<{
   app: Application;
   view: RouteViewCore;
   router: NavigatorCore;
@@ -27,6 +27,9 @@ defineComponent({
 const subViews = ref(view.subViews);
 function gotoPage(url: string) {
   router.push(url);
+}
+function logout() {
+  app.user.logout();
 }
 // const { app, view, router } = props;
 
@@ -129,12 +132,13 @@ view.checkMatch(router._pending);
           <div class="mt-2 text-sm text-center">观看记录</div>
         </div>
         <div
-          class="flex flex-col justify-center p-4 items-center dark:text-black-200"
+          class="flex flex-col justify-center p-4 items-center cursor-pointer dark:text-black-200"
+          @click="logout"
         >
           <div>
             <Users color="white" :size="32" class="w-5 h-5" />
           </div>
-          <div class="mt-2 text-sm text-center">我的</div>
+          <div class="mt-2 text-sm text-center">退出登录</div>
         </div>
       </div>
     </div>

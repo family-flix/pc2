@@ -16,8 +16,11 @@ import {
 import { app } from "@/store/app";
 import { cn } from "@/utils";
 
+import MediaCheck from "./components/MediaCheck.vue";
+
 defineComponent({
   components: {
+    "media-check": MediaCheck,
     "route-stack-view": RouteStackView,
   },
 });
@@ -91,8 +94,8 @@ rootView.onNotFound(() => {
   rootView.curView = mainLayout;
   rootView.appendSubView(mainLayout);
 });
-app.router.onPathnameChange(({ pathname, type }) => {
-  rootView.checkMatch({ pathname, type });
+app.router.onPathnameChange(({ pathname, search, type }) => {
+  rootView.checkMatch({ pathname, search, type });
 });
 app.onPopState((options) => {
   const { type, pathname } = options;
@@ -104,9 +107,17 @@ onMounted(() => {
   app.onReady(() => {
     app.router.start();
   });
-  console.log("[]Application - before start", window.history);
-  app.router.prepare(window.location);
-  app.start();
+  console.log(
+    "[]Application - before start",
+    window.history,
+    window.innerWidth
+  );
+  const { innerWidth, innerHeight, location } = window;
+  app.router.prepare(location);
+  app.start({
+    width: innerWidth,
+    height: innerHeight,
+  });
 });
 
 const className = cn(
@@ -133,6 +144,7 @@ const className = cn(
       ></component>
     </route-stack-view>
   </div>
+  <!-- <media-check /> -->
 </template>
 
 <style scoped></style>

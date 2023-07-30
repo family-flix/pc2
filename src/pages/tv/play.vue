@@ -2,9 +2,6 @@
 import { ref, defineComponent } from "vue";
 
 import { Application } from "@/domains/app";
-import { fetch_tv_list } from "@/domains/tv/services";
-import { ListCore } from "@/domains/list";
-import { RequestCore } from "@/domains/client";
 import { ImageCore } from "@/domains/ui/image";
 import { PlayerCore } from "@/domains/player";
 import { ElementCore } from "@/domains/ui/element";
@@ -19,12 +16,12 @@ defineComponent({
 });
 const { app, view } = defineProps<{ app: Application; view: RouteViewCore }>();
 
-const helper = new ListCore(new RequestCore(fetch_tv_list), { pageSize: 20 });
+// const helper = new ListCore(new RequestCore(fetch_tv_list), { pageSize: 20 });
 const tv = new TVCore();
 const player = new PlayerCore({ app });
 const video = new ElementCore({});
 
-const response = ref(helper.response);
+// const response = ref(helper.response);
 const profile = ref(tv.profile);
 const source = ref(tv.curSource);
 function fetchEpisodesOfSeason(season: any) {
@@ -33,6 +30,30 @@ function fetchEpisodesOfSeason(season: any) {
 function playEpisode(episode: any) {
   tv.playEpisode(episode);
 }
+
+const players: { icon: string; name: string; scheme: string }[] = [
+  { icon: "iina", name: "IINA", scheme: "iina://weblink?url=$durl" },
+  { icon: "potplayer", name: "PotPlayer", scheme: "potplayer://$durl" },
+  { icon: "vlc", name: "VLC", scheme: "vlc://$durl" },
+  { icon: "nplayer", name: "nPlayer", scheme: "nplayer-$durl" },
+  {
+    icon: "infuse",
+    name: "Infuse",
+    scheme: "infuse://x-callback-url/play?url=$durl",
+  },
+  {
+    icon: "mxplayer",
+    name: "MX Player",
+    scheme:
+      "intent:$durl#Intent;package=com.mxtech.videoplayer.ad;S.title=$name;end",
+  },
+  {
+    icon: "mxplayer-pro",
+    name: "MX Player Pro",
+    scheme:
+      "intent:$durl#Intent;package=com.mxtech.videoplayer.pro;S.title=$name;end",
+  },
+];
 
 // console.log("[PAGE]play - useInitialize");
 app.onHidden(() => {
@@ -141,6 +162,32 @@ player.onError((error) => {
 player.onUrlChange(async ({ url, thumbnail }) => {
   const $video = player.node()!;
   console.log("[PAGE]play - player.onUrlChange", url, $video);
+  let u = url;
+  // if (u.includes("pdsapi")) {
+  //   await (async () => {
+  //     try {
+  //       const r = axios.create({
+  //         maxRedirects: 0,
+  //         transformResponse: [],
+  //       });
+  //       const resp = await r.get(u, {
+  //         maxRedirects: 0, // 禁止自动重定向
+  //         validateStatus: function (status) {
+  //           return status >= 200 && status < 300; // 只处理 2xx 状态码
+  //         },
+  //       });
+  //       console.log({ ...resp.headers, status: resp.status });
+  //       if (resp.status === 302) {
+  //         const redirectUrl = resp.headers.location;
+  //         u = redirectUrl;
+  //       }
+  //     } catch (err) {
+  //       setTimeout(() => {
+  //         console.log(err);
+  //       }, 2000);
+  //     }
+  //   })();
+  // }
   if (player.canPlayType("application/vnd.apple.mpegurl")) {
     player.load(url);
     return;
@@ -148,7 +195,6 @@ player.onUrlChange(async ({ url, thumbnail }) => {
   const mod = await import("hls.js");
   const Hls2 = mod.default;
   if (Hls2.isSupported() && url.includes("m3u8")) {
-    // console.log("[PAGE]TVPlaying - need using hls.js");
     const Hls = new Hls2({ fragLoadingTimeOut: 2000 });
     Hls.attachMedia($video);
     Hls.on(Hls2.Events.MEDIA_ATTACHED, () => {
@@ -163,33 +209,42 @@ tv.fetchProfile(view.params.id);
 </script>
 
 <template>
-  <div class="flex flex-wrap">
-    <div class="p-4 w-[980px]">
+  <div class="flex flex-wrap w-full h-screen bg-[#14161a]">
+    <div class="flex-1 flex items-center w-full h-full bg-black">
       <Video :store="player"></Video>
     </div>
-    <div class="profile flex-1 p-4">
+    <div class="profile p-4 h-full w-[380px] md:w-[240px] overflow-y-auto">
       <div v-if="profile">
-        <div class="text-3xl">{{ profile.name }}</div>
-        <div class="seasons mt-4">
+        <div class="text-3xl text-white">{{ profile.name }}</div>
+        <div class="seasons flex items-center space-x-2 mt-4">
           <div
             v-for="season in profile.seasons"
             @click="fetchEpisodesOfSeason(season)"
           >
-            <div class="text-xl">{{ season.name }}</div>
+            <div class="text-xl text-white">{{ season.name }}</div>
           </div>
         </div>
-        <div class="episodes max-h-[360px] overflow-y-auto mt-2" v-if="profile">
+        <div class="episodes flex flex-wrap mt-2" v-if="profile">
           <div
             v-for="episode in profile.curEpisodes"
             @click="playEpisode(episode)"
           >
             <div
               :class="{
+                'inline-flex items-center justify-center w-[60px] h-[60px] mr-[8px] text-center mb-[8px] bg-[#1d1f23]': true,
                 'py-2': true,
+                'cursor-pointer': true,
                 underline: episode.id === profile.curEpisode.id,
               }"
             >
-              {{ episode.name }}
+              <div
+                :class="{
+                  'text-white': episode.id !== profile.curEpisode.id,
+                  'text-green-800': episode.id === profile.curEpisode.id,
+                }"
+              >
+                {{ episode.episode }}
+              </div>
             </div>
           </div>
         </div>

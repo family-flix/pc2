@@ -72,6 +72,7 @@ export type ListResponse<T> = {
   total: number;
   page: number;
   page_size: number;
+  no_more: boolean;
   list: T[];
 };
 

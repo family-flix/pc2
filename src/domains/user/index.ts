@@ -69,7 +69,7 @@ export class UserCore extends BaseDomain<TheTypesOfEvents> {
     this.token = token;
   }
   logout() {
-    // this.validate()
+    this.emit(Events.Logout);
   }
   /**
    * 以成员身份登录

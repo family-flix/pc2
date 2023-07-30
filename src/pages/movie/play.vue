@@ -151,21 +151,21 @@ movie.fetchProfile(view.params.id);
 </script>
 
 <template>
-  <div class="flex flex-wrap">
-    <div class="p-4 w-[980px] h-[580px] bg-black">
+  <div class="flex flex-wrap w-full h-screen bg-[#14161a]">
+    <div class="flex-1 flex items-center w-full h-full bg-black">
       <Video :store="player"></Video>
     </div>
-    <div class="profile flex-1 p-4">
+    <div class="profile p-4 h-full w-[380px] md:w-[240px] overflow-y-auto">
       <div v-if="profile">
-        <div class="text-3xl">{{ profile.name }}</div>
-        <div class="">{{ profile.overview }}</div>
-        <div class="mt-8 text-xl">可选播放源</div>
-        <div class="sources max-h-[360px] overflow-y-auto mt-2">
+        <div class="text-3xl text-white">{{ profile.name }}</div>
+        <div class="text-white">{{ profile.overview }}</div>
+        <div class="mt-8 text-xl text-white">可选播放源</div>
+        <div class="sources mt-2">
           <div v-for="source in profile.sources" @click="changeSource(source)">
             <div
               :class="{
                 'break-all': true,
-                'py-2': true,
+                'py-2 text-white': true,
                 'text-lg': source.file_id === curSource?.file_id,
               }"
             >

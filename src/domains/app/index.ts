@@ -8,6 +8,30 @@ import { Result } from "@/types";
 
 import { LocalCache } from "./cache";
 
+const mediaSizes = {
+  sm: 0,
+  md: 768, // 中等设备宽度阈值
+  lg: 992, // 大设备宽度阈值
+  xl: 1200, // 特大设备宽度阈值
+  "2xl": 1536, // 特大设备宽度阈值
+};
+
+function getCurrentDeviceSize(width: number) {
+  if (width >= mediaSizes["2xl"]) {
+    return "2xl";
+  }
+  if (width >= mediaSizes.xl) {
+    return "xl";
+  }
+  if (width >= mediaSizes.lg) {
+    return "lg";
+  }
+  if (width >= mediaSizes.md) {
+    return "md";
+  }
+  return "sm";
+}
+
 enum Events {
   Ready,
   Tip,
@@ -17,6 +41,7 @@ enum Events {
   // 一些平台相关的事件
   PopState,
   Resize,
+  DeviceSizeChange,
   Blur,
   Keydown,
   EscapeKeyDown,
@@ -40,6 +65,7 @@ type TheTypesOfEvents = {
     width: number;
     height: number;
   };
+  [Events.DeviceSizeChange]: DeviceSizeTypes;
   [Events.Keydown]: {
     key: string;
   };
@@ -52,6 +78,7 @@ type TheTypesOfEvents = {
   [Events.Hidden]: void;
   // [Events.DrivesChange]: Drive[];
 };
+type DeviceSizeTypes = keyof typeof mediaSizes;
 
 export class Application extends BaseDomain<TheTypesOfEvents> {
   user: UserCore;
@@ -68,6 +95,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     width: 0,
     height: 0,
   };
+  curDeviceSize: DeviceSizeTypes = "md";
   safeArea = false;
   Events = Events;
 
@@ -99,28 +127,12 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     this.user = user;
     this.router = router;
     this.cache = cache;
-
-    const { availHeight, availWidth } = window.screen;
-    if (window.navigator.userAgent.match(/iphone/i)) {
-      const matched = [
-        // iphonex iphonexs iphone12mini
-        "375-812",
-        // iPhone XS Max iPhone XR
-        "414-896",
-        // iPhone pro max iPhone14Plus
-        "428-926",
-        // iPhone 12/pro 13/14  753
-        "390-844",
-        // iPhone 14Pro
-        "393-852",
-        // iPhone 14ProMax
-        "430-932",
-      ].includes(`${availWidth}-${availHeight}`);
-    }
   }
   /** 启动应用 */
-  async start() {
-    // console.log('[Application]start');
+  async start(options: { width: number; height: number }) {
+    const { width, height } = options;
+    this.size = { width, height };
+    this.curDeviceSize = getCurrentDeviceSize(width);
     const { beforeReady } = this.lifetimes;
     if (beforeReady) {
       const r = await beforeReady();
@@ -165,6 +177,11 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   }
   resize(size: { width: number; height: number }) {
     this.size = size;
+    const mediaStr = getCurrentDeviceSize(size.width);
+    if (mediaStr !== this.curDeviceSize) {
+      this.curDeviceSize = mediaStr;
+      this.emit(Events.DeviceSizeChange, this.curDeviceSize);
+    }
     this.emit(Events.Resize, size);
   }
   blur() {
@@ -175,17 +192,22 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
    * ----------------
    */
   onReady(handler: Handler<TheTypesOfEvents[Events.Ready]>) {
-    this.on(Events.Ready, handler);
+    return this.on(Events.Ready, handler);
+  }
+  onDeviceSizeChange(
+    handler: Handler<TheTypesOfEvents[Events.DeviceSizeChange]>
+  ) {
+    return this.on(Events.DeviceSizeChange, handler);
   }
   /** 平台相关全局事件 */
   onPopState(handler: Handler<TheTypesOfEvents[Events.PopState]>) {
-    this.on(Events.PopState, handler);
+    return this.on(Events.PopState, handler);
   }
   onResize(handler: Handler<TheTypesOfEvents[Events.Resize]>) {
-    this.on(Events.Resize, handler);
+    return this.on(Events.Resize, handler);
   }
   onBlur(handler: Handler<TheTypesOfEvents[Events.Blur]>) {
-    this.on(Events.Blur, handler);
+    return this.on(Events.Blur, handler);
   }
   onShow(handler: Handler<TheTypesOfEvents[Events.Show]>) {
     return this.on(Events.Show, handler);
@@ -194,13 +216,13 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     return this.on(Events.Hidden, handler);
   }
   onClickLink(handler: Handler<TheTypesOfEvents[Events.ClickLink]>) {
-    this.on(Events.ClickLink, handler);
+    return this.on(Events.ClickLink, handler);
   }
   onKeydown(handler: Handler<TheTypesOfEvents[Events.Keydown]>) {
-    this.on(Events.Keydown, handler);
+    return this.on(Events.Keydown, handler);
   }
   onEscapeKeyDown(handler: Handler<TheTypesOfEvents[Events.EscapeKeyDown]>) {
-    this.on(Events.EscapeKeyDown, handler);
+    return this.on(Events.EscapeKeyDown, handler);
   }
   /**
    * ----------------
@@ -208,6 +230,6 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
    * ----------------
    */
   onError(handler: Handler<TheTypesOfEvents[Events.Error]>) {
-    this.on(Events.Error, handler);
+    return this.on(Events.Error, handler);
   }
 }

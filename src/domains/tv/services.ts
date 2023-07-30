@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-
 import { FetchParams } from "@/domains/list/typing";
 import {
   ListResponse,
@@ -45,8 +43,8 @@ export async function fetch_tv_list(params: FetchParams & { name: string }) {
   }
   return Result.Ok({
     ...resp.data,
-    list: resp.data.list.map((history) => {
-      const { ...rest } = history;
+    list: resp.data.list.map((tv) => {
+      const { ...rest } = tv;
       return {
         ...rest,
         // updated: dayjs(updated).format("YYYY/MM/DD HH:mm"),
@@ -57,12 +55,54 @@ export async function fetch_tv_list(params: FetchParams & { name: string }) {
 export type TVItem = RequestedResource<typeof fetch_tv_list>["list"][0];
 
 /**
+ * 获取电视剧列表
+ */
+export async function fetch_season_list(
+  params: FetchParams & { name: string }
+) {
+  const { page, pageSize, ...rest } = params;
+  const resp = await request.get<
+    ListResponse<{
+      id: string;
+      tv_id: string;
+      name: string;
+      original_name: string;
+      overview: string;
+      poster_path: string;
+      backdrop_path: string;
+      first_air_date: string;
+    }>
+  >("/api/season/list", {
+    ...rest,
+    page,
+    page_size: pageSize,
+  });
+  if (resp.error) {
+    return Result.Err(resp.error);
+  }
+  return Result.Ok({
+    ...resp.data,
+    list: resp.data.list.map((tv) => {
+      const { ...rest } = tv;
+      return {
+        ...rest,
+        // updated: dayjs(updated).format("YYYY/MM/DD HH:mm"),
+      };
+    }),
+  });
+}
+export type SeasonItem = RequestedResource<typeof fetch_season_list>["list"][0];
+
+/**
  * 获取电视剧及包含的剧集详情
  * @param params
  */
-export async function fetch_tv_and_cur_episode(params: { tv_id: string }) {
+export async function fetch_tv_and_cur_episode(params: {
+  tv_id: string;
+  season_id?: string;
+}) {
   // console.log("[]fetch_tv_profile params", params);
-  const { tv_id } = params;
+  const { tv_id, season_id } = params;
   const r = await request.get<{
     id: string;
     name: string;
@@ -109,24 +149,20 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string }) {
         file_id: string;
         file_name: string;
       }[];
-    } | null;
+    };
     cur_season: {
       id: string;
       name: string;
       overview: string;
       air_date: string;
-    } | null;
-  }>(`/api/tv/play/${tv_id}`);
+    };
+  }>(`/api/tv/play/${tv_id}`, {
+    season_id,
+  });
   if (r.error) {
     return Result.Err(r.error);
   }
   const { id, name, overview, seasons, cur_season, cur_episode } = r.data;
-  if (cur_episode === null) {
-    return Result.Err("信息异常");
-  }
-  if (cur_season === null) {
-    return Result.Err("信息异常");
-  }
   const matchedSeason = seasons.find((season) => {
     return season.id === cur_season.id;
   });
@@ -158,6 +194,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string }) {
             season_id,
             season: season_to_chinese_num(season_number),
             episode: episode_to_chinese_num(episode_number),
+            // episode_number,
             sources,
           };
           return d;
@@ -493,10 +530,11 @@ export async function fetch_play_histories(params: FetchParams) {
   if (r.error) {
     return r;
   }
-  const { list, total } = r.data;
+  const { list, total, no_more } = r.data;
   return Result.Ok({
     page,
     pageSize,
+    noMore: no_more,
     total,
     list: list.map((history) => {
       const {
@@ -538,25 +576,29 @@ export type PlayHistoryItem = RequestedResource<
   typeof fetch_play_histories
 >["list"][0];
 
+export enum MediaTypes {
+  TV = 1,
+  Movie = 2,
+}
 /**
- * 获取电影列表
+ * 获取电视剧列表
  */
-export async function fetch_movie_list(params: FetchParams & { name: string }) {
+export async function search_tv_and_movie(
+  params: FetchParams & { name: string }
+) {
   const { page, pageSize, ...rest } = params;
   const resp = await request.get<
     ListResponse<{
       id: string;
+      tv_id: string;
+      type: MediaTypes;
       name: string;
-      original_name: string;
+      season_number?: string;
       overview: string;
       poster_path: string;
-      backdrop_path: string;
       air_date: string;
-      sources: {
-        file_id: string;
-      }[];
     }>
-  >("/api/movie/list", {
+  >("/api/search", {
     ...rest,
     page,
     page_size: pageSize,
@@ -566,8 +608,8 @@ export async function fetch_movie_list(params: FetchParams & { name: string }) {
   }
   return Result.Ok({
     ...resp.data,
-    list: resp.data.list.map((history) => {
-      const { ...rest } = history;
+    list: resp.data.list.map((tv) => {
+      const { ...rest } = tv;
       return {
         ...rest,
         // updated: dayjs(updated).format("YYYY/MM/DD HH:mm"),
@@ -575,4 +617,6 @@ export async function fetch_movie_list(params: FetchParams & { name: string }) {
     }),
   });
 }
-export type MovieItem = RequestedResource<typeof fetch_movie_list>["list"][0];
+export type SearchResultItem = RequestedResource<
+  typeof search_tv_and_movie
+>["list"][0];
