@@ -115,7 +115,7 @@ view.checkMatch(router._pending);
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage('/home/search')"
+          @click="gotoPage('/home/search_tv')"
         >
           <div>
             <Search color="white" :size="32" class="w-5 h-5" />

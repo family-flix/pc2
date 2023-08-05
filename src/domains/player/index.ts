@@ -84,6 +84,7 @@ type TheTypesOfEvents = {
 
 type PlayerProps = {};
 type PlayerState = {
+  playing: boolean;
   poster?: string;
   width: number;
   height: number;
@@ -96,17 +97,15 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   static Events = Events;
 
   private _timer: null | number = null;
-  private _playing = false;
   private _canPlay = false;
-  get playing() {
-    return this._playing;
-  }
   private _ended = false;
   private _duration = 0;
   private _currentTime = 0;
+  private _curVolume = 0.5;
   get currentTime() {
     return this._currentTime;
   }
+  playing = false;
   _mounted = false;
   poster?: string;
   /** 默认是不能播放的，只有用户交互后可以播放 */
@@ -127,6 +126,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
 
   get state(): PlayerState {
     return {
+      playing: this.playing,
       poster: this.poster,
       width: this._size.width,
       height: this._size.height,
@@ -134,15 +134,21 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     };
   }
 
-  constructor(options: { app: Application }) {
+  constructor(options: { app: Application; volume?: number }) {
     super();
 
-    const { app } = options;
+    const { app, volume } = options;
+    if (volume) {
+      this._curVolume = volume;
+    }
     this._app = app;
   }
 
   bindAbstractNode(node: PlayerCore["_abstractNode"]) {
     this._abstractNode = node;
+    if (this._abstractNode) {
+      this._abstractNode.setVolume(this._curVolume);
+    }
   }
   /** 开始播放 */
   async play() {
@@ -153,6 +159,8 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       return;
     }
     this._abstractNode.play();
+    this.playing = true;
+    this.emit(Events.StateChange, { ...this.state });
   }
   /** 暂停播放 */
   async pause() {
@@ -160,6 +168,8 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       return;
     }
     this._abstractNode.pause();
+    this.playing = false;
+    this.emit(Events.StateChange, { ...this.state });
   }
   /** 改变音量 */
   changeVolume(v: number) {
@@ -225,7 +235,13 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     }
     return this._abstractNode.$node;
   }
-  handleTimeUpdate({ currentTime, duration }: { currentTime: number; duration: number }) {
+  handleTimeUpdate({
+    currentTime,
+    duration,
+  }: {
+    currentTime: number;
+    duration: number;
+  }) {
     if (currentTime === 0) {
       return;
     }
@@ -258,7 +274,13 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this._mounted = true;
     this.emit(Events.Mounted);
   }
-  handlePause({ currentTime, duration }: { currentTime: number; duration: number }) {
+  handlePause({
+    currentTime,
+    duration,
+  }: {
+    currentTime: number;
+    duration: number;
+  }) {
     this.emit(Events.Pause, { currentTime, duration });
   }
   handleVolumeChange(cur_volume: number) {
@@ -276,7 +298,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   }
   /** 视频播放结束 */
   handleEnd() {
-    this._playing = false;
+    this.playing = false;
     this._ended = true;
     this.emit(Events.End, {
       current_time: this._currentTime,
@@ -335,7 +357,9 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   onPause(handler: Handler<TheTypesOfEvents[Events.Pause]>) {
     return this.on(Events.Pause, handler);
   }
-  onResolutionChange(handler: Handler<TheTypesOfEvents[Events.ResolutionChange]>) {
+  onResolutionChange(
+    handler: Handler<TheTypesOfEvents[Events.ResolutionChange]>
+  ) {
     return this.on(Events.ResolutionChange, handler);
   }
   onPlay(handler: Handler<TheTypesOfEvents[Events.Play]>) {
@@ -344,7 +368,9 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   onSourceLoaded(handler: Handler<TheTypesOfEvents[Events.SourceLoaded]>) {
     return this.on(Events.SourceLoaded, handler);
   }
-  onCurrentTimeChange(handler: Handler<TheTypesOfEvents[Events.CurrentTimeChange]>) {
+  onCurrentTimeChange(
+    handler: Handler<TheTypesOfEvents[Events.CurrentTimeChange]>
+  ) {
     return this.on(Events.CurrentTimeChange, handler);
   }
   onEnd(handler: Handler<TheTypesOfEvents[Events.End]>) {

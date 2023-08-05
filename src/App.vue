@@ -5,13 +5,13 @@ import RouteStackView from "@/components/ui/RouteStackView.vue";
 import { connect } from "@/domains/app/connect.web";
 import {
   rootView,
-  mainLayout,
-  homeIndexView,
-  homeMovieView,
-  homeHistoryView,
-  homeSearchView,
-  tvPlaying,
-  moviePlaying,
+  homeIndexPage,
+  homeMoviePage,
+  homeLayout,
+  homeMovieSearchPage,
+  homeTVSearchPage,
+  tvPlayingPage,
+  moviePlayingPage,
 } from "@/store/views";
 import { app } from "@/store/app";
 import { cn } from "@/utils";
@@ -25,29 +25,32 @@ defineComponent({
   },
 });
 
-mainLayout.register("/home/index", () => {
-  return homeIndexView;
+homeLayout.register("/home/index", () => {
+  return homeIndexPage;
 });
-mainLayout.register("/home/movie", () => {
-  return homeMovieView;
+homeLayout.register("/home/movie", () => {
+  return homeMoviePage;
 });
-mainLayout.register("/home/history", () => {
-  return homeHistoryView;
+homeLayout.register("/home/history", () => {
+  return homeTVSearchPage;
 });
-mainLayout.register("/home/search", () => {
-  return homeSearchView;
+homeLayout.register("/home/search_tv", () => {
+  return homeTVSearchPage;
+});
+homeLayout.register("/home/search_movie", () => {
+  return homeMovieSearchPage;
 });
 // rootView.register("/home", () => {
 //   return mainLayout;
 // });
 rootView.register("/tv/play/:id", () => {
-  return tvPlaying;
+  return tvPlayingPage;
 });
 rootView.register("/movie/play/:id", () => {
-  return moviePlaying;
+  return moviePlayingPage;
 });
 rootView.register("/", () => {
-  return mainLayout;
+  return homeLayout;
 });
 
 const subViews = ref(rootView.subViews);
@@ -78,7 +81,7 @@ rootView.onMatched((subView) => {
   }
   subView.show();
   if (prevView) {
-    if (app.router._pending.type === "back" || [mainLayout].includes(subView)) {
+    if (app.router._pending.type === "back" || [homeLayout].includes(subView)) {
       prevView.hide();
       subView.uncovered();
       setTimeout(() => {
@@ -91,8 +94,8 @@ rootView.onMatched((subView) => {
 });
 rootView.onNotFound(() => {
   console.log("[Application]rootView.onNotFound");
-  rootView.curView = mainLayout;
-  rootView.appendSubView(mainLayout);
+  rootView.curView = homeLayout;
+  rootView.appendSubView(homeLayout);
 });
 app.router.onPathnameChange(({ pathname, search, type }) => {
   rootView.checkMatch({ pathname, search, type });
@@ -112,6 +115,10 @@ onMounted(() => {
     window.history,
     window.innerWidth
   );
+  app.onTip((msg) => {
+    const { text } = msg;
+    alert(text.join("\n"));
+  });
   const { innerWidth, innerHeight, location } = window;
   app.router.prepare(location);
   app.start({

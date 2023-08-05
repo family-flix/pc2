@@ -2,33 +2,52 @@
 import { ref, defineComponent } from "vue";
 
 import { Application } from "@/domains/app";
-import { ImageCore } from "@/domains/ui/image";
 import { PlayerCore } from "@/domains/player";
 import { ElementCore } from "@/domains/ui/element";
 import { RouteViewCore } from "@/domains/route_view";
 import { TVCore } from "@/domains/tv";
 import Video from "@/components/Video.vue";
+import { EpisodeResolutionTypes } from "@/domains/tv/constants";
+import { ViewComponentProps } from "@/types";
 
 defineComponent({
   components: {
     Video,
   },
 });
-const { app, view } = defineProps<{ app: Application; view: RouteViewCore }>();
+const { app, router, view } = defineProps<ViewComponentProps>();
 
 // const helper = new ListCore(new RequestCore(fetch_tv_list), { pageSize: 20 });
-const tv = new TVCore();
-const player = new PlayerCore({ app });
+const { type: resolution, volume } = app.cache.get<{
+  type: EpisodeResolutionTypes;
+  volume: number;
+}>("player_settings", {
+  type: "SD",
+  volume: 0.5,
+});
+const tv = new TVCore({
+  resolution,
+});
+const player = new PlayerCore({ app, volume });
 const video = new ElementCore({});
 
 // const response = ref(helper.response);
 const profile = ref(tv.profile);
-const source = ref(tv.curSource);
+const curSource = ref(tv.curSource);
+function back() {
+  router.back();
+}
 function fetchEpisodesOfSeason(season: any) {
   tv.fetchEpisodesOfSeason(season);
 }
 function playEpisode(episode: any) {
   tv.playEpisode(episode);
+}
+function changeSource(source: any) {
+  tv.changeSource(source);
+}
+function changeResolution(type: any) {
+  tv.changeResolution(type);
 }
 
 const players: { icon: string; name: string; scheme: string }[] = [
@@ -90,7 +109,7 @@ tv.onEpisodeChange((nextEpisode) => {
   app.setTitle(tv.getTitle().join(" - "));
   const { currentTime, thumbnail } = nextEpisode;
   player.setCurrentTime(currentTime);
-  player.setPoster(ImageCore.url(thumbnail));
+  player.setPoster(thumbnail);
   player.pause();
 });
 tv.onStateChange((nextProfile) => {
@@ -99,27 +118,37 @@ tv.onStateChange((nextProfile) => {
 tv.onTip((msg) => {
   app.tip(msg);
 });
+tv.onBeforeNextEpisode(() => {
+  player.pause();
+});
 tv.onSourceChange((mediaSource) => {
+  console.log("[PAGE]play - tv.onSourceChange", mediaSource.currentTime);
   const { width, height } = mediaSource;
-  // console.log("[PAGE]play - tv.onSourceChange", width, height);
-  const h = Math.ceil((height / width) * app.size.width);
-  // player.setResolution(values.resolution);
+  const h = Math.ceil((height / width) * app.screen.width);
   player.pause();
   player.loadSource(mediaSource);
   player.setSize({
-    width: app.size.width,
+    width: app.screen.width,
     height: h,
   });
   player.setCurrentTime(mediaSource.currentTime);
-  source.value = mediaSource;
+  curSource.value = mediaSource;
 });
 player.onCanPlay(() => {
   if (!view.state.visible) {
     return;
   }
   // console.log("[PAGE]play - player.onCanPlay");
-  // cover.hide();
+  if (!tv.canAutoPlay) {
+    return;
+  }
   player.play();
+  tv.canAutoPlay = false;
+});
+player.onVolumeChange(({ volume }) => {
+  app.cache.merge("player_settings", {
+    volume,
+  });
 });
 player.onProgress(({ currentTime, duration }) => {
   // console.log("[PAGE]TVPlaying - onProgress", currentTime);
@@ -150,44 +179,28 @@ player.onResolutionChange(({ type }) => {
   console.log("[PAGE]play - player.onResolutionChange", type);
   player.setCurrentTime(tv.currentTime);
 });
-player.onSourceLoaded(() => {
-  // console.log("[PAGE]play - player.onSourceLoaded", tv.currentTime);
+tv.onResolutionChange(({ type }) => {
+  console.log("[PAGE]play - player.onResolutionChange", type);
+  app.cache.merge("player_settings", {
+    type,
+  });
 });
-console.log("[PAGE]play - before player.onError");
+// tv.onBeforeChangeSource(() => {
+//   player.pause();
+// });
+player.onSourceLoaded(() => {
+  console.log("[PAGE]play - player.onSourceLoaded", tv.currentTime);
+});
+// console.log("[PAGE]play - before player.onError");
 player.onError((error) => {
-  console.log("[PAGE]play - player.onError");
+  console.log("[PAGE]play - player.onError", error);
+  // const token = "lg9lT9e03WPcmBn";
+  // router.replaceSilently(`/out_players?token=${token}&tv_id=${view.params.id}`);
   app.tip({ text: ["视频加载错误", error.message] });
   player.pause();
 });
 player.onUrlChange(async ({ url, thumbnail }) => {
   const $video = player.node()!;
-  console.log("[PAGE]play - player.onUrlChange", url, $video);
-  let u = url;
-  // if (u.includes("pdsapi")) {
-  //   await (async () => {
-  //     try {
-  //       const r = axios.create({
-  //         maxRedirects: 0,
-  //         transformResponse: [],
-  //       });
-  //       const resp = await r.get(u, {
-  //         maxRedirects: 0, // 禁止自动重定向
-  //         validateStatus: function (status) {
-  //           return status >= 200 && status < 300; // 只处理 2xx 状态码
-  //         },
-  //       });
-  //       console.log({ ...resp.headers, status: resp.status });
-  //       if (resp.status === 302) {
-  //         const redirectUrl = resp.headers.location;
-  //         u = redirectUrl;
-  //       }
-  //     } catch (err) {
-  //       setTimeout(() => {
-  //         console.log(err);
-  //       }, 2000);
-  //     }
-  //   })();
-  // }
   if (player.canPlayType("application/vnd.apple.mpegurl")) {
     player.load(url);
     return;
@@ -205,23 +218,41 @@ player.onUrlChange(async ({ url, thumbnail }) => {
   player.load(url);
 });
 console.log("[PAGE]tv/play - before fetch tv profile", view.params.id);
-tv.fetchProfile(view.params.id);
+tv.fetchProfile(view.params.id, {
+  season_id: view.query.season_id,
+});
 </script>
 
 <template>
-  <div class="flex flex-wrap w-full h-screen bg-[#14161a]">
+  <div class="relative flex flex-wrap w-full h-screen bg-[#14161a]">
+    <div
+      class="absolute top-4 left-4 text-white cursor-pointer"
+      style="z-index: 100"
+      @click="back"
+    >
+      返回
+    </div>
     <div class="flex-1 flex items-center w-full h-full bg-black">
       <Video :store="player"></Video>
     </div>
     <div class="profile p-4 h-full w-[380px] md:w-[240px] overflow-y-auto">
       <div v-if="profile">
         <div class="text-3xl text-white">{{ profile.name }}</div>
-        <div class="seasons flex items-center space-x-2 mt-4">
-          <div
-            v-for="season in profile.seasons"
-            @click="fetchEpisodesOfSeason(season)"
-          >
-            <div class="text-xl text-white">{{ season.name }}</div>
+        <div class="max-w-full overflow-x-auto">
+          <div class="seasons flex items-center space-x-2 pb-8 mt-4">
+            <div
+              v-for="season in profile.seasons"
+              @click="fetchEpisodesOfSeason(season)"
+            >
+              <div
+                :class="{
+                  'text-xl text-white whitespace-nowrap': true,
+                  underline: profile?.curSeason.id === season.id,
+                }"
+              >
+                {{ season.name }}
+              </div>
+            </div>
           </div>
         </div>
         <div class="episodes flex flex-wrap mt-2" v-if="profile">
@@ -245,6 +276,45 @@ tv.fetchProfile(view.params.id);
               >
                 {{ episode.episode }}
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-8 text-white">
+          <div>分辨率</div>
+          <div className="">
+            <template v-for="resolution in curSource?.resolutions">
+              <div class="">
+                <div
+                  :class="{
+                    'p-4 rounded cursor-pointer': true,
+                    'bg-slate-500': curSource?.typeText === resolution.typeText,
+                  }"
+                  @click="changeResolution(resolution.type)"
+                >
+                  {{ resolution.typeText }}
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="mt-8 text-white">
+          <div>可选源</div>
+          <div className="safe-bottom h-full">
+            <div className="">
+              <template v-for="source in profile.curEpisode.sources">
+                <div @click="changeSource(source)">
+                  <div
+                    :class="{
+                      'p-4 rounded cursor-pointer': true,
+                      'bg-slate-500': curSource?.file_id === source.file_id,
+                    }"
+                  >
+                    <div className="break-all">
+                      {{ source.parent_paths }}/{{ source.file_name }}
+                    </div>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </div>

@@ -1,49 +1,60 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { fetch_tv_list } from "@/domains/tv/services";
+import { defineComponent, ref } from "vue";
+import { fetch_season_list, fetch_tv_list } from "@/domains/tv/services";
 import { ListCore } from "@/domains/list";
 import { getPageSizeByDeviceSize } from "@/domains/list/utils";
 import { RequestCore } from "@/domains/client";
-import { NavigatorCore } from "@/domains/navigator";
-import { ImageCore } from "@/domains/ui/image";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
-import { app } from "@/store/app";
+import { ViewComponentProps } from "@/types";
+import LazyImage from "@/components/ui/Image.vue";
 
-const tvList = new ListCore(new RequestCore(fetch_tv_list), {
-  pageSize: getPageSizeByDeviceSize(app.curDeviceSize).pageSize,
+const { app, router } = defineProps<ViewComponentProps>();
+defineComponent({
+  "lazy-image": LazyImage,
 });
-const scroll = new ScrollViewCore();
 
-const tvResponse = ref(tvList.response);
-const { router } = defineProps<{ router: NavigatorCore }>();
-function gotoTVPlaying(tv: { id: string }) {
-  const { id } = tv;
-  router.push(`/tv/play/${id}`);
+const seasonList = new ListCore(new RequestCore(fetch_season_list), {
+  pageSize: getPageSizeByDeviceSize(app.curDeviceSize).pageSize,
+  search: (() => {
+    const { language = [] } = app.cache.get("tv_search", {
+      language: [] as string[],
+    });
+    if (!language.length) {
+      return {};
+    }
+    return {
+      language: language.join("|"),
+    };
+  })(),
+});
+const scrollView = new ScrollViewCore();
+
+const tvResponse = ref(seasonList.response);
+function gotoTVPlaying(season: { id: string; tv_id: string }) {
+  const { id, tv_id } = season;
+  router.push(`/tv/play/${tv_id}?season_id=${id}`);
 }
 
-tvList.onStateChange((nextResponse) => {
+seasonList.onStateChange((nextResponse) => {
   tvResponse.value = nextResponse;
 });
-scroll.onReachBottom(() => {
-  tvList.loadMore();
+scrollView.onReachBottom(() => {
+  seasonList.loadMore();
 });
 
-tvList.init();
+seasonList.init();
 </script>
 
 <template>
-  <scroll-view :store="scroll">
+  <scroll-view :store="scrollView">
     <list-view
-      :store="tvList"
+      :store="seasonList"
       class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
     >
       <div v-for="item in tvResponse.dataSource" @click="gotoTVPlaying(item)">
-        <img
-          class="w-[360px] object-contain rounded-sm"
-          :src="item.poster_path"
-        />
+        <lazy-image class="w-[360px] object-contain" :src="item.poster_path" />
       </div>
     </list-view>
   </scroll-view>

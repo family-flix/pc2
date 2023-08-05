@@ -10,6 +10,7 @@ import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { ViewComponentProps } from "@/types";
+import LazyImage from "@/components/ui/Image.vue";
 
 const { app, router } = defineProps<ViewComponentProps>();
 
@@ -19,6 +20,7 @@ const movieList = new ListCore(new RequestCore(fetch_movie_list), {
 const scroll = new ScrollViewCore();
 
 defineComponent({
+  "lazy-image": LazyImage,
   "scroll-view": ScrollView,
   "list-view": ListView,
 });
@@ -56,10 +58,7 @@ function gotoMoviePlaying(movie: { id: string }) {
         v-for="item in movieResponse.dataSource"
         @click="gotoMoviePlaying(item)"
       >
-        <img
-          class="w-[360px] object-contain rounded-sm"
-          :src="item.poster_path"
-        />
+        <lazy-image class="w-[360px] object-contain" :src="item.poster_path" />
       </div>
     </list-view>
   </scroll-view>

@@ -4,7 +4,7 @@ import { UserCore } from "@/domains/user";
 import { BaseDomain } from "@/domains/base";
 // import { Drive } from "@/domains/drive";
 import { NavigatorCore } from "@/domains/navigator";
-import { Result } from "@/types";
+import { JSONObject, Result } from "@/types";
 
 import { LocalCache } from "./cache";
 
@@ -88,7 +88,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     beforeReady: () => Promise<Result<null>>;
     onReady: () => void;
   }> = {};
-  size: {
+  screen: {
     width: number;
     height: number;
   } = {
@@ -97,6 +97,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   };
   curDeviceSize: DeviceSizeTypes = "md";
   safeArea = false;
+  env: JSONObject = {};
   Events = Events;
 
   // @todo 怎么才能更方便地拓展 Application 类，给其添加许多的额外属性还能有类型提示呢？
@@ -131,7 +132,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   /** 启动应用 */
   async start(options: { width: number; height: number }) {
     const { width, height } = options;
-    this.size = { width, height };
+    this.screen = { width, height };
     this.curDeviceSize = getCurrentDeviceSize(width);
     const { beforeReady } = this.lifetimes;
     if (beforeReady) {
@@ -148,10 +149,16 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   /** 手机震动 */
   vibrate() {}
   setSize(size: { width: number; height: number }) {
-    this.size = size;
+    this.screen = size;
   }
   setTitle(title: string): void {
     throw new Error("请实现 setTitle 方法");
+  }
+  setEnv(extra: JSONObject) {
+    this.env = {
+      ...this.env,
+      ...extra,
+    };
   }
   getComputedStyle(el: HTMLElement): CSSStyleDeclaration {
     throw new Error("请实现 getComputedStyle 方法");
@@ -176,7 +183,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     this.emit(Events.PopState, { type, pathname });
   }
   resize(size: { width: number; height: number }) {
-    this.size = size;
+    this.screen = size;
     const mediaStr = getCurrentDeviceSize(size.width);
     if (mediaStr !== this.curDeviceSize) {
       this.curDeviceSize = mediaStr;
