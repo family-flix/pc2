@@ -10,6 +10,7 @@ import {
   homeLayout,
   homeMovieSearchPage,
   homeTVSearchPage,
+  homeHistoryPage,
   tvPlayingPage,
   moviePlayingPage,
 } from "@/store/views";
@@ -32,7 +33,7 @@ homeLayout.register("/home/movie", () => {
   return homeMoviePage;
 });
 homeLayout.register("/home/history", () => {
-  return homeTVSearchPage;
+  return homeHistoryPage;
 });
 homeLayout.register("/home/search_tv", () => {
   return homeTVSearchPage;
@@ -56,9 +57,7 @@ rootView.register("/", () => {
 const subViews = ref(rootView.subViews);
 
 rootView.onSubViewsChange((nextSubViews) => {
-  console.log(
-    ...rootView.log("[]Application - subViews changed", nextSubViews)
-  );
+  console.log(...rootView.log("[]Application - subViews changed", nextSubViews));
   subViews.value = nextSubViews;
   // subViews = nextSubViews;
   // setSubViews(nextSubViews);
@@ -110,11 +109,7 @@ onMounted(() => {
   app.onReady(() => {
     app.router.start();
   });
-  console.log(
-    "[]Application - before start",
-    window.history,
-    window.innerWidth
-  );
+  console.log("[]Application - before start", window.history, window.innerWidth);
   app.onTip((msg) => {
     const { text } = msg;
     alert(text.join("\n"));
@@ -143,12 +138,7 @@ const className = cn(
       :className="className"
       :index="index"
     >
-      <component
-        :is="view.component"
-        :view="view"
-        :app="app"
-        :router="app.router"
-      ></component>
+      <component :is="view.component" :view="view" :app="app" :router="app.router"></component>
     </route-stack-view>
   </div>
   <!-- <media-check /> -->

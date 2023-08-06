@@ -62,6 +62,13 @@ type RouteConfigure = {
   /** 子路由 */
   child?: NavigatorCore;
 };
+type NavigatorState = {
+  pathname: string;
+  query: JSONObject;
+  params: JSONObject;
+  search: string;
+  location: string;
+};
 
 export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
   static prefix: string | null = null;
@@ -96,6 +103,16 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
     search: "",
     type: "initialize",
   };
+
+  get state() {
+    return {
+      pathname: this.pathname,
+      search: this._pending.search,
+      params: this.params,
+      query: this.query,
+      location: this.location,
+    };
+  }
 
   /** 启动路由监听 */
   async prepare(location: RouteLocation) {
@@ -179,9 +196,7 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
     }
     this.setPrevPathname(this.pathname);
     this.setPathname(realTargetPathname);
-    this.histories[this.histories.length - 1] = {
-      pathname: realTargetPathname,
-    };
+    this.histories[this.histories.length - 1] = { pathname: realTargetPathname };
     this.emit(Events.ReplaceState, {
       from: this.prevPathname,
       //       title,
@@ -215,8 +230,7 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
       if (this.prevHistories.length === 0) {
         return false;
       }
-      const lastStackWhenBack =
-        this.prevHistories[this.prevHistories.length - 1];
+      const lastStackWhenBack = this.prevHistories[this.prevHistories.length - 1];
       // console.log("[Router]lastStackWhenBack", lastStackWhenBack);
       if (lastStackWhenBack.pathname === targetPathname) {
         return true;
@@ -290,12 +304,7 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
   }
 }
 
-export type RouteAction =
-  | "initialize"
-  | "push"
-  | "replace"
-  | "back"
-  | "forward";
+export type RouteAction = "initialize" | "push" | "replace" | "back" | "forward";
 
 function buildQuery(path: string) {
   const [, search] = path.split("?");

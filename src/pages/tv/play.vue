@@ -49,6 +49,9 @@ function changeSource(source: any) {
 function changeResolution(type: any) {
   tv.changeResolution(type);
 }
+function loadMoreEpisode() {
+  tv.episodeList.loadMore();
+}
 
 const players: { icon: string; name: string; scheme: string }[] = [
   { icon: "iina", name: "IINA", scheme: "iina://weblink?url=$durl" },
@@ -63,14 +66,12 @@ const players: { icon: string; name: string; scheme: string }[] = [
   {
     icon: "mxplayer",
     name: "MX Player",
-    scheme:
-      "intent:$durl#Intent;package=com.mxtech.videoplayer.ad;S.title=$name;end",
+    scheme: "intent:$durl#Intent;package=com.mxtech.videoplayer.ad;S.title=$name;end",
   },
   {
     icon: "mxplayer-pro",
     name: "MX Player Pro",
-    scheme:
-      "intent:$durl#Intent;package=com.mxtech.videoplayer.pro;S.title=$name;end",
+    scheme: "intent:$durl#Intent;package=com.mxtech.videoplayer.pro;S.title=$name;end",
   },
 ];
 
@@ -225,13 +226,7 @@ tv.fetchProfile(view.params.id, {
 
 <template>
   <div class="relative flex flex-wrap w-full h-screen bg-[#14161a]">
-    <div
-      class="absolute top-4 left-4 text-white cursor-pointer"
-      style="z-index: 100"
-      @click="back"
-    >
-      返回
-    </div>
+    <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">返回</div>
     <div class="flex-1 flex items-center w-full h-full bg-black">
       <Video :store="player"></Video>
     </div>
@@ -240,10 +235,7 @@ tv.fetchProfile(view.params.id, {
         <div class="text-3xl text-white">{{ profile.name }}</div>
         <div class="max-w-full overflow-x-auto">
           <div class="seasons flex items-center space-x-2 pb-8 mt-4">
-            <div
-              v-for="season in profile.seasons"
-              @click="fetchEpisodesOfSeason(season)"
-            >
+            <div v-for="season in profile.seasons" @click="fetchEpisodesOfSeason(season)">
               <div
                 :class="{
                   'text-xl text-white whitespace-nowrap': true,
@@ -256,16 +248,12 @@ tv.fetchProfile(view.params.id, {
           </div>
         </div>
         <div class="episodes flex flex-wrap mt-2" v-if="profile">
-          <div
-            v-for="episode in profile.curEpisodes"
-            @click="playEpisode(episode)"
-          >
+          <div v-for="episode in profile.curEpisodes" @click="playEpisode(episode)">
             <div
               :class="{
                 'inline-flex items-center justify-center w-[60px] h-[60px] mr-[8px] text-center mb-[8px] bg-[#1d1f23]': true,
                 'py-2': true,
                 'cursor-pointer': true,
-                underline: episode.id === profile.curEpisode.id,
               }"
             >
               <div
@@ -274,10 +262,28 @@ tv.fetchProfile(view.params.id, {
                   'text-green-800': episode.id === profile.curEpisode.id,
                 }"
               >
-                {{ episode.episode }}
+                {{ episode.episode_text }}
               </div>
             </div>
           </div>
+          <template v-if="!profile.episodeNoMore">
+            <div
+              :class="{
+                'inline-flex items-center justify-center w-[60px] h-[60px] mr-[8px] text-center mb-[8px] bg-[#1d1f23]': true,
+                'py-2': true,
+                'cursor-pointer': true,
+              }"
+            >
+              <div
+                :class="{
+                  'text-white': true,
+                }"
+                @click="loadMoreEpisode"
+              >
+                ...
+              </div>
+            </div>
+          </template>
         </div>
         <div class="mt-8 text-white">
           <div>分辨率</div>
@@ -309,9 +315,7 @@ tv.fetchProfile(view.params.id, {
                       'bg-slate-500': curSource?.file_id === source.file_id,
                     }"
                   >
-                    <div className="break-all">
-                      {{ source.parent_paths }}/{{ source.file_name }}
-                    </div>
+                    <div className="break-all">{{ source.parent_paths }}/{{ source.file_name }}</div>
                   </div>
                 </div>
               </template>

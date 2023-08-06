@@ -5,7 +5,6 @@ import { ref, defineComponent } from "vue";
 import { RouteViewCore } from "@/domains/route_view";
 import { Application } from "@/domains/app";
 import { NavigatorCore } from "@/domains/navigator";
-import { ViewComponent } from "@/types/index";
 import KeepAliveView from "@/components/ui/KeepAliveView.vue";
 
 // const props = defineProps<ViewComponent>();
@@ -16,7 +15,7 @@ const { app, view, router } = defineProps<{
 }>();
 defineComponent({
   components: {
-    KeepAliveView,
+    "keep-alive-view": KeepAliveView,
     // Home,
     // Film,
     // Search,
@@ -24,6 +23,9 @@ defineComponent({
     // Users,
   },
 });
+
+// const routerState = ref(router.state);
+const curPathname = ref(router.pathname);
 const subViews = ref(view.subViews);
 function gotoPage(url: string) {
   router.push(url);
@@ -41,12 +43,7 @@ view.onSubViewsChange((nextSubViews) => {
   subViews.value = nextSubViews;
 });
 view.onMatched((subView) => {
-  console.log(
-    "[LAYOUT]home/layout - view.onMatched",
-    view.curView?._name,
-    view.prevView?._name,
-    subView._name
-  );
+  console.log("[LAYOUT]home/layout - view.onMatched", view.curView?._name, view.prevView?._name, subView._name);
   if (subView === view.curView) {
     return;
   }
@@ -76,11 +73,8 @@ view.onNotFound(() => {
   // view.curView.show();
 });
 router.onPathnameChange(({ pathname, type }) => {
-  console.log(
-    "[LAYOUT]home/layout - router.onPathnameChange",
-    view.state.visible,
-    view.state.layered
-  );
+  console.log("[LAYOUT]home/layout - router.onPathnameChange", view.state.visible, view.state.layered);
+  curPathname.value = pathname;
   if (view.state.layered) {
     return;
   }
@@ -102,7 +96,14 @@ view.checkMatch(router._pending);
           <div>
             <Home color="white" :size="32" class="w-5 h-5" />
           </div>
-          <div class="mt-2 text-sm text-center">首页</div>
+          <div
+            :class="{
+              'mt-2 text-sm text-center': true,
+              underline: curPathname === `${NavigatorCore.prefix}/home/index`,
+            }"
+          >
+            首页
+          </div>
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
@@ -111,7 +112,14 @@ view.checkMatch(router._pending);
           <div>
             <Home color="white" :size="32" class="w-5 h-5" />
           </div>
-          <div class="mt-2 text-sm text-center">电影</div>
+          <div
+            :class="{
+              'mt-2 text-sm text-center': true,
+              underline: curPathname === `${NavigatorCore.prefix}/home/movie`,
+            }"
+          >
+            电影
+          </div>
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
@@ -120,7 +128,14 @@ view.checkMatch(router._pending);
           <div>
             <Search color="white" :size="32" class="w-5 h-5" />
           </div>
-          <div class="mt-2 text-sm text-center">搜索</div>
+          <div
+            :class="{
+              'mt-2 text-sm text-center': true,
+              underline: curPathname === `${NavigatorCore.prefix}/home/search_tv`,
+            }"
+          >
+            搜索
+          </div>
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
@@ -129,12 +144,16 @@ view.checkMatch(router._pending);
           <div>
             <HardDrive color="white" :size="32" class="w-5 h-5" />
           </div>
-          <div class="mt-2 text-sm text-center">观看记录</div>
+          <div
+            :class="{
+              'mt-2 text-sm text-center': true,
+              underline: curPathname === `${NavigatorCore.prefix}/home/history`,
+            }"
+          >
+            观看记录
+          </div>
         </div>
-        <div
-          class="flex flex-col justify-center p-4 items-center cursor-pointer dark:text-black-200"
-          @click="logout"
-        >
+        <div class="flex flex-col justify-center p-4 items-center cursor-pointer dark:text-black-200" @click="logout">
           <div>
             <Users color="white" :size="32" class="w-5 h-5" />
           </div>
@@ -142,28 +161,19 @@ view.checkMatch(router._pending);
         </div>
       </div>
     </div>
-    <div
-      class="layout__content flex-1 z-index-0 relative flex flex-col w-full h-full"
-    >
+    <div class="layout__content flex-1 z-index-0 relative flex flex-col w-full h-full">
       <div class="flex-1 h-full">
-        <KeepAliveView
+        <keep-alive-view
           v-for="(subView, index) in subViews"
           key="id"
           class="absolute inset-0 w-full h-full"
           :store="subView"
           :index="index"
         >
-          <div
-            class="w-full h-full scrollbar-hide overflow-y-auto bg-white opacity-100 dark:bg-black hide-scroll"
-          >
-            <component
-              :is="subView.component"
-              :app="app"
-              :view="subView"
-              :router="router"
-            ></component>
+          <div class="w-full h-full scrollbar-hide overflow-y-auto bg-white opacity-100 dark:bg-black hide-scroll">
+            <component :is="subView.component" :app="app" :view="subView" :router="router"></component>
           </div>
-        </KeepAliveView>
+        </keep-alive-view>
       </div>
     </div>
   </div>

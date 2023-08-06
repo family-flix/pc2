@@ -47,7 +47,7 @@ export const homeMovieSearchPage = new RouteViewCore({
   title: "搜索电影",
   component: HomeMovieSearchPage,
 });
-export const cView = new RouteViewCore({
+export const homeHistoryPage = new RouteViewCore({
   title: "播放历史",
   component: HomeHistoryPage,
 });

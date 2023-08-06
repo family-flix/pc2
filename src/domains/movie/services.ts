@@ -1,19 +1,9 @@
 import dayjs from "dayjs";
 
 import { FetchParams } from "@/domains/list/typing";
-import {
-  ListResponse,
-  RequestedResource,
-  Result,
-  Unpacked,
-  UnpackedResult,
-} from "@/types";
+import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
 import { request } from "@/utils/request";
-import {
-  episode_to_chinese_num,
-  relative_time_from_now,
-  season_to_chinese_num,
-} from "@/utils";
+import { episode_to_chinese_num, relative_time_from_now, season_to_chinese_num } from "@/utils";
 
 import { MediaResolutionTypes, MediaResolutionTypeTexts } from "./constants";
 
@@ -46,8 +36,7 @@ export async function fetch_movie_and_cur_source(params: { movie_id: string }) {
   if (r.error) {
     return Result.Err(r.error);
   }
-  const { id, name, overview, current_time, thumbnail, sources, cur_source } =
-    r.data;
+  const { id, name, overview, current_time, thumbnail, sources, cur_source } = r.data;
   return Result.Ok({
     id,
     name,
@@ -59,17 +48,12 @@ export async function fetch_movie_and_cur_source(params: { movie_id: string }) {
   });
 }
 /** 电影详情 */
-export type MovieProfile = UnpackedResult<
-  Unpacked<ReturnType<typeof fetch_movie_and_cur_source>>
->;
+export type MovieProfile = UnpackedResult<Unpacked<ReturnType<typeof fetch_movie_and_cur_source>>>;
 
 /**
  * 获取影片「播放源」信息，包括播放地址、宽高等信息
  */
-export async function fetch_movie_profile(params: {
-  id: string;
-  type?: MediaResolutionTypes;
-}) {
+export async function fetch_movie_profile(params: { id: string; type?: MediaResolutionTypes }) {
   // console.log("[]fetch_episode_profile", params);
   const { id } = params;
   const res = await request.get<{
@@ -136,10 +120,7 @@ export async function fetch_movie_profile(params: {
 /**
  * 获取影片「播放源」信息，包括播放地址、宽高等信息
  */
-export async function fetch_media_profile(params: {
-  id: string;
-  type?: MediaResolutionTypes;
-}) {
+export async function fetch_media_profile(params: { id: string; type?: MediaResolutionTypes }) {
   // console.log("[]fetch_episode_profile", params);
   const { id } = params;
   const res = await request.get<{
@@ -199,9 +180,7 @@ export async function fetch_media_profile(params: {
     }),
   });
 }
-export type MediaSourceProfile = UnpackedResult<
-  Unpacked<ReturnType<typeof fetch_movie_profile>>
->;
+export type MediaSourceProfile = UnpackedResult<Unpacked<ReturnType<typeof fetch_movie_profile>>>;
 /**
  * 更新播放记录
  */
@@ -281,10 +260,11 @@ export async function fetch_play_histories(params: FetchParams) {
   if (r.error) {
     return r;
   }
-  const { list, total } = r.data;
+  const { list, total, no_more, page_size } = r.data;
   return Result.Ok({
+    no_more,
+    page_size,
     page,
-    pageSize,
     total,
     list: list.map((history) => {
       const {
@@ -322,9 +302,7 @@ export async function fetch_play_histories(params: FetchParams) {
     }),
   });
 }
-export type PlayHistoryItem = RequestedResource<
-  typeof fetch_play_histories
->["list"][0];
+export type PlayHistoryItem = RequestedResource<typeof fetch_play_histories>["list"][0];
 
 /**
  * 获取电影列表
