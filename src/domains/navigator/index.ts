@@ -7,6 +7,7 @@ import { Handler } from "mitt";
 
 import { BaseDomain } from "@/domains/base";
 import { JSONObject } from "@/types";
+import { query_stringify } from "@/utils";
 
 enum Events {
   PushState,
@@ -149,6 +150,7 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
   }
   /** 跳转到指定路由 */
   async push(targetPathname: string, targetQuery?: Record<string, string>) {
+    // console.log("[DOMAIN]navigator - push", this.query);
     // this.log("push", targetPathname, this.prevPathname);
     const url = (() => {
       if (targetPathname.startsWith("http")) {
@@ -160,7 +162,11 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
     const r = new URL(url);
     const { pathname: realTargetPathname, search } = r;
     const query = targetQuery || buildQuery(search);
-    this.query = query;
+    const remainingFields = extractDefinedKeys(this.query, ["token"]);
+    this.query = {
+      ...query,
+      ...remainingFields,
+    };
     if (this.pathname === realTargetPathname) {
       console.log("cur pathname has been", targetPathname);
       return;
@@ -174,9 +180,7 @@ export class NavigatorCore extends BaseDomain<TheTypesOfEvents> {
       // 这里似乎不用 this.origin，只要是 / 开头的，就会拼接在后面
       path: (() => {
         let url = `${this.origin}${realTargetPathname}`;
-        if (search) {
-          url += search;
-        }
+        url += "?" + query_stringify(this.query);
         return url;
       })(),
       pathname: realTargetPathname,
@@ -312,4 +316,18 @@ function buildQuery(path: string) {
     return {} as Record<string, string>;
   }
   return qs.parse(search) as Record<string, string>;
+}
+
+type ExtractDefinedKeys<T, K extends keyof T> = {
+  [key in K]: T[key] extends undefined ? never : T[key];
+};
+function extractDefinedKeys<T extends any, K extends keyof T>(obj: T, keys: K[]): ExtractDefinedKeys<T, K> {
+  const result = {} as ExtractDefinedKeys<T, K>;
+  for (const key of keys) {
+    // @ts-ignore
+    if (obj.hasOwnProperty(key) && obj[key] !== undefined) {
+      result[key] = obj[key] as ExtractDefinedKeys<T, K>[typeof key];
+    }
+  }
+  return result;
 }

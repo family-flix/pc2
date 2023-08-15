@@ -8,6 +8,7 @@ import { BaseDomain } from "@/domains/base";
 import { MediaSourceProfile } from "@/domains/tv/services";
 import { EpisodeResolutionTypes } from "@/domains/tv/constants";
 import { Application } from "@/domains/app";
+import { app } from "@/store/app";
 
 enum Events {
   Mounted,
@@ -202,8 +203,13 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     ) {
       return;
     }
-    this._size = size;
-    this.emit(Events.SizeChange, size);
+    const { width, height } = size;
+    const h = Math.ceil((height / width) * app.screen.width);
+    this._size = {
+      width: app.screen.width,
+      height: h,
+    };
+    this.emit(Events.SizeChange, { ...this._size });
     this.emit(Events.StateChange, { ...this.state });
   }
   setResolution(values: { type: EpisodeResolutionTypes; text: string }) {
@@ -235,16 +241,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     }
     return this._abstractNode.$node;
   }
-  handleTimeUpdate({
-    currentTime,
-    duration,
-  }: {
-    currentTime: number;
-    duration: number;
-  }) {
-    if (currentTime === 0) {
-      return;
-    }
+  handleTimeUpdate({ currentTime, duration }: { currentTime: number; duration: number }) {
     if (this._currentTime === currentTime) {
       return;
     }
@@ -274,13 +271,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this._mounted = true;
     this.emit(Events.Mounted);
   }
-  handlePause({
-    currentTime,
-    duration,
-  }: {
-    currentTime: number;
-    duration: number;
-  }) {
+  handlePause({ currentTime, duration }: { currentTime: number; duration: number }) {
     this.emit(Events.Pause, { currentTime, duration });
   }
   handleVolumeChange(cur_volume: number) {
@@ -305,7 +296,8 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       duration: this._duration,
     });
   }
-  handleLoadedmetadata() {
+  handleLoadedmetadata(size: { width: number; height: number }) {
+    this.setSize(size);
     this.emit(Events.SourceLoaded);
   }
   handleLoad() {
@@ -357,9 +349,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   onPause(handler: Handler<TheTypesOfEvents[Events.Pause]>) {
     return this.on(Events.Pause, handler);
   }
-  onResolutionChange(
-    handler: Handler<TheTypesOfEvents[Events.ResolutionChange]>
-  ) {
+  onResolutionChange(handler: Handler<TheTypesOfEvents[Events.ResolutionChange]>) {
     return this.on(Events.ResolutionChange, handler);
   }
   onPlay(handler: Handler<TheTypesOfEvents[Events.Play]>) {
@@ -368,9 +358,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   onSourceLoaded(handler: Handler<TheTypesOfEvents[Events.SourceLoaded]>) {
     return this.on(Events.SourceLoaded, handler);
   }
-  onCurrentTimeChange(
-    handler: Handler<TheTypesOfEvents[Events.CurrentTimeChange]>
-  ) {
+  onCurrentTimeChange(handler: Handler<TheTypesOfEvents[Events.CurrentTimeChange]>) {
     return this.on(Events.CurrentTimeChange, handler);
   }
   onEnd(handler: Handler<TheTypesOfEvents[Events.End]>) {

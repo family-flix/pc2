@@ -6,6 +6,7 @@ import { Handler } from "mitt";
 
 import { ListCore } from "@/domains/list";
 import { RequestCore } from "@/domains/client";
+import { SubtitleCore } from "@/domains/subtitle";
 import { BaseDomain } from "@/domains/base";
 import { Result } from "@/types";
 
@@ -37,6 +38,8 @@ enum Events {
   BeforeNextEpisode,
   BeforePrevEpisode,
   BeforeChangeSource,
+  /** 字幕改变 */
+  SubtitleChange,
 }
 type TheTypesOfEvents = {
   [Events.ProfileLoaded]: TVProps["profile"];
@@ -50,6 +53,14 @@ type TheTypesOfEvents = {
   [Events.BeforePrevEpisode]: void;
   [Events.StateChange]: TVProps["profile"];
   [Events.BeforeChangeSource]: void;
+  [Events.SubtitleChange]: {
+    index: string;
+    /** 是否有字幕 */
+    enabled: boolean;
+    /** 手动展示/隐藏字幕 */
+    visible: boolean;
+    texts: string[];
+  };
 };
 type TVState = {};
 type TVProps = {
@@ -127,6 +138,19 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
   });
   /** 正在请求中（获取详情、视频源信息等） */
   private _pending = false;
+  /** 字幕 */
+  subtitle: {
+    index: string;
+    enabled: boolean;
+    visible: boolean;
+    texts: string[];
+  } = {
+    index: "0",
+    enabled: false,
+    visible: true,
+    texts: [],
+  };
+  _subtitleStore: SubtitleCore | null = null;
 
   constructor(options: Partial<{ name: string } & TVProps> = {}) {
     super();
@@ -138,8 +162,11 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       if (!this.profile) {
         return;
       }
-      console.log('this.episodeList.onDataSourceChange', this.episodeList.response.noMore);
+      console.log("this.episodeList.onDataSourceChange", this.episodeList.response.noMore);
       this.curEpisodes = nextDataSource;
+      if (this.curSeason) {
+        this.curSeason.episodes = nextDataSource;
+      }
       this.profile.curEpisodes = nextDataSource;
       this.profile.episodeNoMore = this.episodeList.response.noMore;
       this.emit(Events.StateChange, { ...this.profile });
@@ -188,7 +215,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       return {
         ...prev,
         tv_id: id,
-        season_id,
+        season_id: season_id || curSeason.id,
       };
     });
     this.emit(Events.ProfileLoaded, { ...this.profile });
@@ -225,7 +252,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this.profile.curEpisode = { ...episode, currentTime, thumbnail };
     this.curEpisode = { ...episode, currentTime, thumbnail };
     this.curSource = (() => {
-      const { file_id, resolutions } = res.data;
+      const { file_id, resolutions, subtitles } = res.data;
       const matched_resolution = resolutions.find((e) => e.type === this.curResolutionType);
       if (!matched_resolution) {
         const { url, type, typeText, width, height, thumbnail } = resolutions[0];
@@ -238,6 +265,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
           height,
           thumbnail,
           resolutions,
+          subtitles,
         };
       }
       const { url, type, typeText, width, height, thumbnail } = matched_resolution;
@@ -251,7 +279,54 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
         height,
         thumbnail,
         resolutions,
+        subtitles,
       };
+    })();
+    (async () => {
+      if (!this.curSource) {
+        return;
+      }
+      if (this._subtitleStore) {
+        this._subtitleStore.destroy();
+      }
+      this._subtitleStore = null;
+      const subtitleFile = (() => {
+        const matched = this.curSource.subtitles.find((s) => {
+          return s.language === "chi";
+        });
+        if (matched) {
+          return matched;
+        }
+        const first = this.curSource.subtitles[0];
+        if (!first) {
+          return first;
+        }
+        return null;
+      })();
+      if (!subtitleFile) {
+        return;
+      }
+      const r = await SubtitleCore.New(subtitleFile, {
+        currentTime,
+      });
+      if (r.error) {
+        return;
+      }
+      const { curLine } = r.data;
+      this.subtitle.enabled = true;
+      this.subtitle.visible = false;
+      this.subtitle.index = curLine?.line ?? "0";
+      this.subtitle.texts = curLine?.texts ?? [];
+      console.log("[DOMAIN]tv/index - after SubtitleCore.New", this.currentTime, this.subtitle, curLine);
+      this.emit(Events.SubtitleChange, { ...this.subtitle });
+      this._subtitleStore = r.data;
+      this._subtitleStore.onStateChange((nextState) => {
+        const { curLine } = nextState;
+        this.subtitle.index = curLine?.line ?? "0";
+        this.subtitle.texts = curLine?.texts ?? [];
+        console.log("[DOMAIN]tv/index - subtitleStore.onStateChange", this.subtitle, curLine);
+        this.emit(Events.SubtitleChange, { ...this.subtitle });
+      });
     })();
     // this.tip({
     //   text: [this.profile.name, this.curEpisode.episode],
@@ -276,12 +351,14 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       return season.id === season_id;
     });
     if (!curSeason) {
-      return Result.Err("获取异常，没有找到当前剧集所在季");
+      return Result.Err("没有找到当前剧集所在季");
     }
-    const { episodes } = curSeason;
+    // const { episodes } = curSeason;
+    const episodes = this.curEpisodes;
+    console.log("[DOMAIN]tv/index - getNextEpisode", curSeason, this.curEpisode);
     const index = episodes.findIndex((e) => e.id === id);
     if (index === -1) {
-      return Result.Err("获取异常，没有找到当前剧集所在季");
+      return Result.Err("没有找到当前剧集在季中的顺序");
     }
     const is_last_episode = index === episodes.length - 1;
     if (!is_last_episode) {
@@ -294,11 +371,11 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     // const cur_season_index = seasons.findIndex((s) => s == season_of_cur_episode);
     const cur_season_index = seasons.indexOf(curSeason);
     if (cur_season_index === -1) {
-      return Result.Err("获取异常，没有找到当前剧集所在季");
+      return Result.Err("没有找到当前季的顺序");
     }
     const next_season = seasons[cur_season_index + 1];
     if (!next_season) {
-      return Result.Err("获取异常，没有找到下一季");
+      return Result.Err("没有找到下一季");
     }
     const r = await this.fetchEpisodesOfSeason(next_season);
     if (r.error) {
@@ -321,12 +398,13 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       return season.id === season_id;
     });
     if (!curSeason) {
-      return Result.Err("获取异常，没有找到当前剧集所在季");
+      return Result.Err("没有找到当前剧集所在季");
     }
-    const { episodes } = curSeason;
+    // const { episodes } = curSeason;
+    const episodes = this.curEpisodes;
     const index = episodes.findIndex((e) => e.id === id);
     if (index === -1) {
-      return Result.Err("获取异常，没有找到当前剧集所在季");
+      return Result.Err("没有找到当前剧集所在季的顺序");
     }
     const isFirstEpisode = index === episodes.length - 1;
     if (!isFirstEpisode) {
@@ -366,7 +444,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this._pending = true;
     const nextEpisodeRes = await this.getNextEpisode();
     if (nextEpisodeRes.error) {
-      this.tip({ text: ["视频还未加载"] });
+      this.tip({ text: [nextEpisodeRes.error.message] });
       this._pending = false;
       return;
     }
@@ -391,7 +469,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this._pending = true;
     const prevEpisodeRes = await this.getPrevEpisode();
     if (prevEpisodeRes.error) {
-      this.tip({ text: ["视频还未加载"] });
+      this.tip({ text: [prevEpisodeRes.error.message] });
       this._pending = false;
       return;
     }
@@ -405,7 +483,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this._pending = false;
     return Result.Ok(null);
   }
-  /** 加载指定季下的文件夹并返回第一集 */
+  /** 加载指定季下的剧集列表并返回第一集 */
   async fetchEpisodesOfSeason(season: TVProps["profile"]["curSeason"]) {
     if (this.id === undefined) {
       return Result.Err("缺少 tv id 参数");
@@ -414,7 +492,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       return Result.Err("视频还未加载");
     }
     if (this.curSeason && this.curSeason.id === season.id) {
-      return Result.Err("重复点击");
+      return Result.Err(`已经是 ${this.curSeason.name} 了`);
     }
     const episodes_res = await this.episodeList.search({
       season_id: season.id,
@@ -432,7 +510,10 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       });
       return Result.Err(msg);
     }
-    this.curSeason = season;
+    this.curSeason = {
+      ...season,
+      episodes: dataSource,
+    };
     this.profile.curSeason = season;
     this.emit(Events.StateChange, { ...this.profile });
     return Result.Ok(dataSource);
@@ -470,20 +551,20 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this.canAutoPlay = true;
     this.curSource = (() => {
       const { file_id } = r.data;
-      if (this.curResolutionType === "LD") {
-        const { url, type, typeText, width, height, thumbnail, resolutions } = r.data;
-        return {
-          url,
-          file_id,
-          type,
-          typeText,
-          width,
-          height,
-          thumbnail,
-          resolutions,
-        };
-      }
-      const { resolutions } = r.data;
+      // if (this.curResolutionType === "LD") {
+      //   const { url, type, typeText, width, height, thumbnail, resolutions } = r.data;
+      //   return {
+      //     url,
+      //     file_id,
+      //     type,
+      //     typeText,
+      //     width,
+      //     height,
+      //     thumbnail,
+      //     resolutions,
+      //   };
+      // }
+      const { resolutions, subtitles } = r.data;
       const matched_resolution = resolutions.find((e) => e.type === this.curResolutionType);
       if (!matched_resolution) {
         const { url, type, typeText, width, height, thumbnail } = resolutions[0];
@@ -496,6 +577,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
           height,
           thumbnail,
           resolutions,
+          subtitles,
         };
       }
       const { url, type, typeText, width, height, thumbnail } = matched_resolution;
@@ -508,6 +590,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
         height,
         thumbnail,
         resolutions,
+        subtitles,
       };
     })();
     this.emit(Events.SourceChange, {
@@ -524,7 +607,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       return Result.Err(msg);
     }
     // console.log("switchResolution 2");
-    const { type, resolutions } = this.curSource;
+    const { type, resolutions, subtitles } = this.curSource;
     if (type === target_type) {
       const msg = this.tip({
         text: [`当前已经是${EpisodeResolutionTypeTexts[target_type]}了`],
@@ -550,6 +633,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       height,
       thumbnail,
       resolutions,
+      subtitles,
     };
     this.emit(Events.SourceChange, {
       ...this.curSource,
@@ -590,13 +674,30 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
   updatePlayProgress = throttle_1(10 * 1000, (values: Partial<{ currentTime: number; duration: number }> = {}) => {
     this.updatePlayProgressForce(values);
   });
+  /** 当前进度改变 */
+  handleCurTimeChange(values: { currentTime: number; duration: number }) {
+    const { currentTime = 0 } = values;
+    if (this._subtitleStore && !this.subtitle.visible) {
+      this._subtitleStore.handleTimeChange(currentTime);
+    }
+    this.updatePlayProgress(values);
+  }
   getTitle(): [string, string, string] {
     if (this.profile === null || this.curEpisode === null) {
-      return ["加载中", "", ""];
+      // @ts-ignore
+      return ["加载中..."];
     }
     const { episode_text: episode, season_text: season } = this.curEpisode;
     const { name } = this.profile;
     return [episode, season, name];
+  }
+  hideSubtitle() {
+    this.subtitle.visible = true;
+    this.emit(Events.SubtitleChange, { ...this.subtitle });
+  }
+  showSubtitle() {
+    this.subtitle.visible = false;
+    this.emit(Events.SubtitleChange, { ...this.subtitle });
   }
 
   onSourceChange(handler: Handler<TheTypesOfEvents[Events.SourceChange]>) {
@@ -622,6 +723,9 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
   }
   onBeforeChangeSource(handler: Handler<TheTypesOfEvents[Events.BeforeChangeSource]>) {
     return this.on(Events.BeforeChangeSource, handler);
+  }
+  onSubtitleChange(handler: Handler<TheTypesOfEvents[Events.SubtitleChange]>) {
+    return this.on(Events.SubtitleChange, handler);
   }
 }
 
