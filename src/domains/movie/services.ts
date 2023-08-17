@@ -88,13 +88,17 @@ export async function fetch_movie_profile(params: { id: string; type?: MediaReso
       /** 影片高度 */
       height: number;
     }[];
+    subtitles: {
+      language: string;
+      url: string;
+    }[];
   }>(`/api/movie/${id}`, {
     type: params.type,
   });
   if (res.error) {
     return Result.Err(res.error);
   }
-  const { url, file_id, width, height, thumbnail, type, other } = res.data;
+  const { url, file_id, width, height, thumbnail, type, other, subtitles } = res.data;
   return Result.Ok({
     url,
     file_id,
@@ -114,6 +118,7 @@ export async function fetch_movie_profile(params: { id: string; type?: MediaReso
         thumbnail,
       };
     }),
+    subtitles,
   });
 }
 
@@ -152,13 +157,17 @@ export async function fetch_media_profile(params: { id: string; type?: MediaReso
       /** 影片高度 */
       height: number;
     }[];
+    subtitles: {
+      language: string;
+      url: string;
+    }[];
   }>(`/api/media/${id}`, {
     type: params.type,
   });
   if (res.error) {
     return Result.Err(res.error);
   }
-  const { url, file_id, width, height, thumbnail, type, other } = res.data;
+  const { url, file_id, width, height, thumbnail, type, other, subtitles } = res.data;
   return Result.Ok({
     url,
     file_id,
@@ -178,6 +187,7 @@ export async function fetch_media_profile(params: { id: string; type?: MediaReso
         thumbnail,
       };
     }),
+    subtitles,
   });
 }
 export type MediaSourceProfile = UnpackedResult<Unpacked<ReturnType<typeof fetch_movie_profile>>>;

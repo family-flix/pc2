@@ -24,6 +24,7 @@ type NodeProps<T = unknown> = {
 export class NodeCore<T = unknown> extends BaseDomain<TheTypesOfEvents<T>> {
   id = this.uid();
   cur: SelectionCore<T>;
+  // @ts-ignore
   longPressTimer: null | NodeJS.Timeout = null;
 
   state: NodeState = {
