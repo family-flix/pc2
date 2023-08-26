@@ -4,7 +4,7 @@ import { ref, defineComponent } from "vue";
 import { Application } from "@/domains/app";
 import { fetch_tv_list } from "@/domains/tv/services";
 import { ListCore } from "@/domains/list";
-import { RequestCore } from "@/domains/client";
+import { RequestCore } from "@/domains/request";
 import { ImageCore } from "@/domains/ui/image";
 import { PlayerCore } from "@/domains/player";
 import { ElementCore } from "@/domains/ui/element";
@@ -70,6 +70,7 @@ movie.onSourceChange((mediaSource) => {
   const h = Math.ceil((height / width) * app.screen.width);
   // player.setResolution(values.resolution);
   player.pause();
+  // @ts-ignore
   player.loadSource(mediaSource);
   player.setSize({
     width: app.screen.width,

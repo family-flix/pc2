@@ -4,7 +4,7 @@ import { defineComponent, ref } from "vue";
 import { fetch_movie_list } from "@/domains/movie/services";
 import { ListCore } from "@/domains/list";
 import { getPageSizeByDeviceSize } from "@/domains/list/utils";
-import { RequestCore } from "@/domains/client";
+import { RequestCore } from "@/domains/request";
 import { ImageCore } from "@/domains/ui/image";
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";

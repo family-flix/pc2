@@ -1,11 +1,10 @@
 /**
  * @file 电视剧
  */
-import throttle from "lodash/fp/throttle";
 import { Handler } from "mitt";
 
 import { ListCore } from "@/domains/list";
-import { RequestCore } from "@/domains/client";
+import { RequestCore } from "@/domains/request";
 import { SubtitleCore } from "@/domains/subtitle";
 import { BaseDomain } from "@/domains/base";
 import { Result } from "@/types";
@@ -209,6 +208,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
       curEpisodes,
       episodeNoMore,
     };
+    // this.curEpisode = curEpisode;
     this.curSeason = curSeason;
     this.episodeList.modifyDataSource(curEpisodes);
     this.episodeList.setParams((prev) => {
@@ -225,7 +225,6 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
 
   /** 播放该电视剧下指定影片 */
   async playEpisode(episode: TVEpisodeProfile, extra: { currentTime?: number; thumbnail?: string | null } = {}) {
-    // 只有继续播放时，才有这两个参数
     const { currentTime = 0, thumbnail = null } = extra;
     console.log("[PAGE](play/index) - play episode");
     if (!this.profile) {
@@ -282,52 +281,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
         subtitles,
       };
     })();
-    (async () => {
-      if (!this.curSource) {
-        return;
-      }
-      if (this._subtitleStore) {
-        this._subtitleStore.destroy();
-      }
-      this._subtitleStore = null;
-      const subtitleFile = (() => {
-        const matched = this.curSource.subtitles.find((s) => {
-          return s.language === "chi";
-        });
-        if (matched) {
-          return matched;
-        }
-        const first = this.curSource.subtitles[0];
-        if (!first) {
-          return first;
-        }
-        return null;
-      })();
-      if (!subtitleFile) {
-        return;
-      }
-      const r = await SubtitleCore.New(subtitleFile, {
-        currentTime,
-      });
-      if (r.error) {
-        return;
-      }
-      const { curLine } = r.data;
-      this.subtitle.enabled = true;
-      this.subtitle.visible = false;
-      this.subtitle.index = curLine?.line ?? "0";
-      this.subtitle.texts = curLine?.texts ?? [];
-      console.log("[DOMAIN]tv/index - after SubtitleCore.New", this.currentTime, this.subtitle, curLine);
-      this.emit(Events.SubtitleChange, { ...this.subtitle });
-      this._subtitleStore = r.data;
-      this._subtitleStore.onStateChange((nextState) => {
-        const { curLine } = nextState;
-        this.subtitle.index = curLine?.line ?? "0";
-        this.subtitle.texts = curLine?.texts ?? [];
-        console.log("[DOMAIN]tv/index - subtitleStore.onStateChange", this.subtitle, curLine);
-        this.emit(Events.SubtitleChange, { ...this.subtitle });
-      });
-    })();
+    this.loadSubtitle({ currentTime });
     // this.tip({
     //   text: [this.profile.name, this.curEpisode.episode],
     // });
@@ -339,6 +293,53 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this.emit(Events.SourceChange, { ...this.curSource, currentTime });
     this.emit(Events.StateChange, { ...this.profile });
     return Result.Ok(this.curEpisode);
+  }
+  async loadSubtitle(options: { currentTime: number }) {
+    const { currentTime } = options;
+    if (!this.curSource) {
+      return;
+    }
+    if (this._subtitleStore) {
+      this._subtitleStore.destroy();
+    }
+    this._subtitleStore = null;
+    const subtitleFile = (() => {
+      const matched = this.curSource.subtitles.find((s) => {
+        return s.language === "chi";
+      });
+      if (matched) {
+        return matched;
+      }
+      const first = this.curSource.subtitles[0];
+      if (!first) {
+        return first;
+      }
+      return null;
+    })();
+    if (!subtitleFile) {
+      return;
+    }
+    const r = await SubtitleCore.New(subtitleFile, {
+      currentTime,
+    });
+    if (r.error) {
+      return;
+    }
+    const { curLine } = r.data;
+    this.subtitle.enabled = true;
+    this.subtitle.visible = false;
+    this.subtitle.index = curLine?.line ?? "0";
+    this.subtitle.texts = curLine?.texts ?? [];
+    console.log("[DOMAIN]tv/index - after SubtitleCore.New", this.currentTime, this.subtitle, curLine);
+    this.emit(Events.SubtitleChange, { ...this.subtitle });
+    this._subtitleStore = r.data;
+    this._subtitleStore.onStateChange((nextState) => {
+      const { curLine } = nextState;
+      this.subtitle.index = curLine?.line ?? "0";
+      this.subtitle.texts = curLine?.texts ?? [];
+      console.log("[DOMAIN]tv/index - subtitleStore.onStateChange", this.subtitle, curLine);
+      this.emit(Events.SubtitleChange, { ...this.subtitle });
+    });
   }
   /** 获取下一剧集 */
   async getNextEpisode() {
@@ -531,15 +532,17 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
   }
   async changeSource(source: { file_id: string }) {
     const { file_id } = source;
-    if (this.profile === null || this.curEpisode === null || this.curSource === null) {
+    // console.log(this.profile);
+    // console.log(this.curEpisode);
+    if (this.profile === null) {
       const msg = this.tip({ text: ["视频还未加载完成"] });
       return Result.Err(msg);
     }
-    if (file_id === this.curSource.file_id) {
+    if (this.curSource && file_id === this.curSource.file_id) {
       return;
     }
     const r = await fetch_source_playing_info({
-      episode_id: this.curEpisode.id,
+      episode_id: this.profile.curEpisode.id,
       file_id,
     });
     if (r.error) {
@@ -551,19 +554,6 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this.canAutoPlay = true;
     this.curSource = (() => {
       const { file_id } = r.data;
-      // if (this.curResolutionType === "LD") {
-      //   const { url, type, typeText, width, height, thumbnail, resolutions } = r.data;
-      //   return {
-      //     url,
-      //     file_id,
-      //     type,
-      //     typeText,
-      //     width,
-      //     height,
-      //     thumbnail,
-      //     resolutions,
-      //   };
-      // }
       const { resolutions, subtitles } = r.data;
       const matched_resolution = resolutions.find((e) => e.type === this.curResolutionType);
       if (!matched_resolution) {
@@ -593,6 +583,7 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
         subtitles,
       };
     })();
+    this.loadSubtitle({ currentTime: this.currentTime });
     this.emit(Events.SourceChange, {
       ...this.curSource,
       currentTime: this.currentTime,

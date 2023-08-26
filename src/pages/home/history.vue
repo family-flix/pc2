@@ -4,7 +4,7 @@ import { defineComponent, ref } from "vue";
 import { fetch_play_histories, PlayHistoryItem } from "@/domains/tv/services";
 import { ListCore } from "@/domains/list";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
-import { RequestCore } from "@/domains/client";
+import { RequestCore } from "@/domains/request";
 import { ViewComponentProps } from "@/types";
 import { ImageCore } from "@/domains/ui/image";
 import ListView from "@/components/ui/ListView.vue";
@@ -21,12 +21,12 @@ defineComponent({
 });
 const response = ref(helper.response);
 function gotoPlyingPage(history: PlayHistoryItem) {
-  const { tv_id, movie_id } = history;
+  const { tv_id } = history;
   if (tv_id) {
     router.push(`/tv/play/${tv_id}`);
     return;
   }
-  router.push(`/movie/play/${movie_id}`);
+  // router.push(`/movie/play/${movie_id}`);
 }
 // view.onReady(() => {
 //   console.log("home/history ready");
@@ -101,15 +101,6 @@ helper.init();
                 <p class="mx-2 text-gray-500">·</p>
                 <p class="text-gray-500">{{ history.season }}</p>
               </div>
-              <div class="mt-2">{{ history.updated }} 看到 {{ history.percent }}</div>
-            </div>
-          </template>
-          <template v-else-if="history.movie_id">
-            <div class="relative">
-              <img class="w-full min-h-[180px] object-cover" :src="history.poster_path" :alt="history.name" />
-            </div>
-            <div class="relative flex-1 max-w-sm overflow-hidden text-ellipsis mt-2 mb-8">
-              <h2 class="text-2xl">{{ history.name }}</h2>
               <div class="mt-2">{{ history.updated }} 看到 {{ history.percent }}</div>
             </div>
           </template>

@@ -3,9 +3,10 @@ import dayjs from "dayjs";
 import { FetchParams } from "@/domains/list/typing";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
 import { request } from "@/utils/request";
-import { episode_to_chinese_num, relative_time_from_now, season_to_chinese_num } from "@/utils";
+import { episode_to_chinese_num, minute_to_hour, relative_time_from_now, season_to_chinese_num } from "@/utils";
 
 import { MediaResolutionTypes, MediaResolutionTypeTexts } from "./constants";
+import { MediaSource, MovieGenresTexts, MovieSourceTexts } from "@/constants";
 
 /**
  * 获取电影和当前播放进度
@@ -158,8 +159,8 @@ export async function fetch_media_profile(params: { id: string; type?: MediaReso
       height: number;
     }[];
     subtitles: {
-      language: string;
       url: string;
+      language: string;
     }[];
   }>(`/api/media/${id}`, {
     type: params.type,
@@ -272,9 +273,9 @@ export async function fetch_play_histories(params: FetchParams) {
   }
   const { list, total, no_more, page_size } = r.data;
   return Result.Ok({
-    no_more,
-    page_size,
     page,
+    page_size,
+    no_more,
     total,
     list: list.map((history) => {
       const {
@@ -327,7 +328,11 @@ export async function fetch_movie_list(params: FetchParams & { name: string }) {
       overview: string;
       poster_path: string;
       backdrop_path: string;
-      air_date: string;
+      first_air_date: string;
+      vote_average: number;
+      genres: string;
+      origin_country: string;
+      runtime: number;
     }>
   >("/api/movie/list", {
     ...rest,
@@ -339,11 +344,54 @@ export async function fetch_movie_list(params: FetchParams & { name: string }) {
   }
   return Result.Ok({
     ...resp.data,
-    list: resp.data.list.map((history) => {
-      const { ...rest } = history;
+    list: resp.data.list.map((movie) => {
+      const {
+        id,
+        name,
+        original_name,
+        overview,
+        runtime,
+        poster_path,
+        first_air_date,
+        vote_average,
+        genres,
+        origin_country,
+      } = movie;
       return {
-        ...rest,
-        // updated: dayjs(updated).format("YYYY/MM/DD HH:mm"),
+        id,
+        name: name || original_name,
+        overview,
+        poster_path,
+        air_date: dayjs(first_air_date).year(),
+        vote: (() => {
+          if (vote_average === 0) {
+            return "N/A";
+          }
+          return vote_average.toFixed(1);
+        })(),
+        genres: origin_country
+          .split("|")
+          .map((country) => {
+            return MovieSourceTexts[country as MediaSource] ?? "unknown";
+          })
+          .concat(
+            genres
+              .split("|")
+              .map((g) => {
+                return MovieGenresTexts[g];
+              })
+              .filter(Boolean)
+          ),
+        runtime: (() => {
+          if (!runtime) {
+            return null;
+          }
+          const [hour, minute] = minute_to_hour(runtime);
+          if (hour) {
+            return `${hour}h${minute}m`;
+          }
+          return `${minute}m`;
+        })(),
       };
     }),
   });

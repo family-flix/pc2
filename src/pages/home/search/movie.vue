@@ -10,7 +10,7 @@ import {
   MediaTypes,
 } from "@/domains/tv/services";
 // import { LazyImage } from "@/components/ui/image";
-import { RequestCore } from "@/domains/client";
+import { RequestCore } from "@/domains/request";
 import { ListCore } from "@/domains/list";
 import { ButtonCore } from "@/domains/ui/button";
 import { InputCore } from "@/domains/ui/input";

@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { FetchParams } from "@/domains/list/typing";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
 import { request } from "@/utils/request";
-import { episode_to_chinese_num, relative_time_from_now, season_to_chinese_num } from "@/utils";
+import { episode_to_chinese_num, minute_to_hour, relative_time_from_now, season_to_chinese_num } from "@/utils";
 
 import { EpisodeResolutionTypes, EpisodeResolutionTypeTexts } from "./constants";
 import { MediaSource, TVGenresTexts, TVSourceTexts } from "@/constants";
@@ -169,6 +169,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
         overview: string;
         season_number: string;
         episode_number: string;
+        runtime: number;
         season_id: string;
         sources: MediaSourceProfileRes[];
       }[];
@@ -206,8 +207,8 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
     name,
     overview,
     curSeason: {
-      ...(matchedSeason || cur_season),
       episodes: [],
+      ...(matchedSeason || cur_season),
     },
     episodeNoMore: (() => {
       if (matchedSeason) {
@@ -219,14 +220,29 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
       // 大概率会走这里
       if (matchedSeason) {
         return matchedSeason.episodes.map((episode) => {
-          const { id, name, overview, season_number, episode_number, season_id, sources } = episode;
+          const { id, name, overview, season_number, episode_number, season_id, runtime, sources } = episode;
           const d = {
             id,
             name,
             overview,
             season_id,
             season_text: season_to_chinese_num(season_number),
-            episode_text: episode_to_chinese_num(episode_number),
+            episode_text: (() => {
+              if (name.match(/第[^集]{1,}集/)) {
+                return name;
+              }
+              return `${episode_to_chinese_num(episode_number)}、${name}`;
+            })(),
+            runtime: (() => {
+              if (!runtime) {
+                return null;
+              }
+              const [hour, minute] = minute_to_hour(runtime);
+              if (hour) {
+                return `${hour}h${minute}m`;
+              }
+              return `${minute}m`;
+            })(),
             sources,
           };
           return d;
@@ -247,6 +263,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
         currentTime: current_time,
         thumbnail,
         season_id,
+        runtime: "" as string | null,
         season_text: season_to_chinese_num(season_number),
         episode_text: episode_to_chinese_num(episode_number),
         sources,
@@ -260,12 +277,22 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
         name,
         overview,
         episodes: episodes.map((episode) => {
-          const { id, name, overview, season_number, episode_number, sources, season_id } = episode;
+          const { id, name, overview, season_number, episode_number, runtime, sources, season_id } = episode;
           const d = {
             id,
             name,
             overview,
             season_id,
+            runtime: (() => {
+              if (!runtime) {
+                return null;
+              }
+              const [hour, minute] = minute_to_hour(runtime);
+              if (hour) {
+                return `${hour}h${minute}m`;
+              }
+              return `${minute}m`;
+            })(),
             season_text: season_to_chinese_num(season_number),
             episode_text: episode_to_chinese_num(episode_number),
             sources,
@@ -322,6 +349,8 @@ export async function fetch_episode_profile(params: { id: string; type?: Episode
       height: number;
     }[];
     subtitles: {
+      type: number;
+      name: string;
       language: string;
       url: string;
     }[];
@@ -368,6 +397,7 @@ export async function fetch_episodes_of_season(params: { tv_id: string; season_i
       overview: string;
       season_number: string;
       episode_number: string;
+      runtime: number;
       season_id: string;
       sources: MediaSourceProfileRes[];
     }>
@@ -385,14 +415,29 @@ export async function fetch_episodes_of_season(params: { tv_id: string; season_i
     total,
     no_more,
     list: list.map((episode) => {
-      const { id, name, overview, season_number, episode_number, sources, season_id } = episode;
+      const { id, name, overview, season_number, episode_number, runtime, sources, season_id } = episode;
       const d = {
         id,
         name,
         overview,
         season_id,
         season_text: season_to_chinese_num(season_number),
-        episode_text: episode_to_chinese_num(episode_number),
+        episode_text: (() => {
+          if (name.match(/第[^集]{1,}集/)) {
+            return name;
+          }
+          return `${episode_to_chinese_num(episode_number)}、${name}`;
+        })(),
+        runtime: (() => {
+          if (!runtime) {
+            return null;
+          }
+          const [hour, minute] = minute_to_hour(runtime);
+          if (hour) {
+            return `${hour}h${minute}m`;
+          }
+          return `${minute}m`;
+        })(),
         sources,
       };
       return d;
@@ -437,6 +482,8 @@ export async function fetch_source_playing_info(body: { episode_id: string; file
       height: number;
     }[];
     subtitles: {
+      type: number;
+      name: string;
       language: string;
       url: string;
     }[];
@@ -508,8 +555,6 @@ export async function fetch_play_histories(params: FetchParams) {
       tv_id: string;
       /** 影片id */
       episode_id: string;
-      /** 电视剧id */
-      movie_id: string;
       /** 该集总时长 */
       duration: number;
       /** 看到该电视剧第几集 */
@@ -554,7 +599,6 @@ export async function fetch_play_histories(params: FetchParams) {
         name,
         tv_id,
         episode_id,
-        movie_id,
         poster_path,
         updated,
         has_update,
@@ -571,7 +615,6 @@ export async function fetch_play_histories(params: FetchParams) {
         name,
         tv_id,
         episode_id,
-        movie_id,
         poster_path,
         cur_episode_count,
         episode_count,

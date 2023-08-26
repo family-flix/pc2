@@ -3,7 +3,7 @@ import { defineComponent, ref } from "vue";
 import { fetch_season_list, fetch_tv_list } from "@/domains/tv/services";
 import { ListCore } from "@/domains/list";
 import { getPageSizeByDeviceSize } from "@/domains/list/utils";
-import { RequestCore } from "@/domains/client";
+import { RequestCore } from "@/domains/request";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
