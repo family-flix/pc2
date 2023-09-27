@@ -11,6 +11,7 @@ import ScrollView from "@/components/ui/ScrollView.vue";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { ViewComponentProps } from "@/types";
 import LazyImage from "@/components/ui/Image.vue";
+import { moviePlayingPage, rootView } from "@/store/views";
 
 const { app, router } = defineProps<ViewComponentProps>();
 
@@ -44,20 +45,17 @@ movieList.init();
 
 function gotoMoviePlaying(movie: { id: string }) {
   const { id } = movie;
-  router.push(`/movie/play/${id}`);
+  moviePlayingPage.params = {
+    id,
+  };
+  rootView.layerSubView(moviePlayingPage);
 }
 </script>
 
 <template>
   <scroll-view :store="scroll">
-    <list-view
-      :store="movieList"
-      class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-    >
-      <div
-        v-for="item in movieResponse.dataSource"
-        @click="gotoMoviePlaying(item)"
-      >
+    <list-view :store="movieList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+      <div v-for="item in movieResponse.dataSource" @click="gotoMoviePlaying(item)">
         <lazy-image class="w-[360px] object-contain" :src="item.poster_path" />
       </div>
     </list-view>

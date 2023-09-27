@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { ref, defineComponent } from "vue";
+import { ArrowLeft } from "lucide-vue-next";
 
 import { Application } from "@/domains/app";
-import { fetch_tv_list } from "@/domains/tv/services";
-import { ListCore } from "@/domains/list";
-import { RequestCore } from "@/domains/request";
-import { ImageCore } from "@/domains/ui/image";
 import { PlayerCore } from "@/domains/player";
-import { ElementCore } from "@/domains/ui/element";
 import { RouteViewCore } from "@/domains/route_view";
 import { MovieCore } from "@/domains/movie";
+import { createVVTSubtitle } from "@/domains/subtitle/utils";
 import Video from "@/components/Video.vue";
+import { rootView } from "@/store/views";
 
 defineComponent({
   components: {
@@ -19,18 +17,19 @@ defineComponent({
 });
 const { app, view } = defineProps<{ app: Application; view: RouteViewCore }>();
 
-const helper = new ListCore(new RequestCore(fetch_tv_list), { pageSize: 20 });
 const movie = new MovieCore();
 const player = new PlayerCore({ app });
-const video = new ElementCore({});
 
-const response = ref(helper.response);
 const profile = ref(movie.profile);
 const curSource = ref(movie.curSource);
+const subtitleState = ref(movie.subtitle);
+const rate = ref(player.state.rate);
 function changeSource(source: { file_id: string }) {
   movie.changeSource(source);
 }
-
+function back() {
+  rootView.uncoverPrevView();
+}
 // console.log("[PAGE]play - useInitialize");
 app.onHidden(() => {
   player.pause();
@@ -43,20 +42,14 @@ app.onShow(() => {
 });
 view.onHidden(() => {
   player.pause();
-  // tv.updatePlayProgress();
 });
-// view.onUnmounted(() => {
-//   player.destroy();
-// });
-// video.onMounted(() => {
-//   connect(videoRef.current!, player);
-// });
-
 movie.onProfileLoaded((profile) => {
   app.setTitle(movie.getTitle().join(" - "));
-  // console.log("[PAGE]play - tv.onProfileLoaded", curEpisode.name);
   movie.play();
   player.setCurrentTime(profile.currentTime);
+});
+movie.onSubtitleLoaded((subtitle) => {
+  player.setSubtitle(createVVTSubtitle(subtitle));
 });
 movie.onStateChange((nextProfile) => {
   profile.value = nextProfile;
@@ -64,19 +57,17 @@ movie.onStateChange((nextProfile) => {
 movie.onTip((msg) => {
   app.tip(msg);
 });
+movie.onSubtitleChange((l) => {
+  subtitleState.value = l;
+});
 movie.onSourceChange((mediaSource) => {
   const { width, height } = mediaSource;
-  // console.log("[PAGE]play - tv.onSourceChange", width, height);
-  const h = Math.ceil((height / width) * app.screen.width);
-  // player.setResolution(values.resolution);
   player.pause();
-  // @ts-ignore
   player.loadSource(mediaSource);
   player.setSize({
-    width: app.screen.width,
-    height: h,
+    width,
+    height,
   });
-  console.log("[PAGE]play - tv.onSourceChange", mediaSource.currentTime);
   player.setCurrentTime(mediaSource.currentTime);
   curSource.value = mediaSource;
 });
@@ -84,8 +75,9 @@ player.onCanPlay(() => {
   if (!view.state.visible) {
     return;
   }
-  // console.log("[PAGE]play - player.onCanPlay");
-  // cover.hide();
+  if (!movie.canAutoPlay) {
+    return;
+  }
   player.play();
 });
 player.onProgress(({ currentTime, duration }) => {
@@ -103,11 +95,13 @@ player.onPause(({ currentTime, duration }) => {
     duration,
   });
 });
-player.onEnd(() => {
-  console.log("[PAGE]play - player.onEnd");
-});
 player.onVolumeChange(({ volume }) => {
-  console.log("[PAGE]play - player.onVolumeChange", volume);
+  app.cache.merge("player_settings", {
+    volume,
+  });
+});
+player.onRateChange((nextState) => {
+  rate.value = nextState.rate;
 });
 player.onSizeChange(({ height }) => {
   console.log("[PAGE]play - player.onSizeChange");
@@ -120,7 +114,6 @@ player.onSourceLoaded(() => {
   console.log("[PAGE]play - player.onSourceLoaded", player.currentTime);
   player.setCurrentTime(player.currentTime);
 });
-console.log("[PAGE]play - before player.onError");
 player.onError((error) => {
   console.log("[PAGE]play - player.onError");
   app.tip({ text: ["视频加载错误", error.message] });
@@ -147,12 +140,14 @@ player.onUrlChange(async ({ url, thumbnail }) => {
   }
   player.load(url);
 });
-console.log("[PAGE]tv/play - before fetch tv profile", view.params.id);
 movie.fetchProfile(view.params.id);
 </script>
 
 <template>
   <div class="flex flex-wrap w-full h-screen bg-[#14161a]">
+    <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">
+      <ArrowLeft :size="32" />
+    </div>
     <div class="flex-1 flex items-center w-full h-full bg-black">
       <Video :store="player"></Video>
     </div>

@@ -1,5 +1,5 @@
 import { BaseDomain } from "@/domains/base";
-import { SelectionCore } from "@/domains/cur";
+import { RefCore } from "@/domains/cur";
 import { Handler } from "mitt";
 
 enum Events {
@@ -23,7 +23,7 @@ type NodeProps<T = unknown> = {
 };
 export class NodeCore<T = unknown> extends BaseDomain<TheTypesOfEvents<T>> {
   id = this.uid();
-  cur: SelectionCore<T>;
+  cur: RefCore<T>;
   // @ts-ignore
   longPressTimer: null | NodeJS.Timeout = null;
 
@@ -35,7 +35,7 @@ export class NodeCore<T = unknown> extends BaseDomain<TheTypesOfEvents<T>> {
   constructor(options: Partial<{ _name: string } & NodeProps<T>> = {}) {
     super(options);
 
-    this.cur = new SelectionCore();
+    this.cur = new RefCore();
     const { onClick, onLongPress } = options;
     if (onClick) {
       this.onClick(() => {

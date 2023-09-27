@@ -6,8 +6,15 @@ import { RouteViewCore } from "@/domains/route_view";
 import { Application } from "@/domains/app";
 import { NavigatorCore } from "@/domains/navigator";
 import KeepAliveView from "@/components/ui/KeepAliveView.vue";
+import {
+  homeHistoryPage,
+  homeIndexPage,
+  homeLayout,
+  homeMoviePage,
+  homeMovieSearchPage,
+  homeTVSearchPage,
+} from "@/store/views";
 
-// const props = defineProps<ViewComponent>();
 const { app, view, router } = defineProps<{
   app: Application;
   view: RouteViewCore;
@@ -16,71 +23,24 @@ const { app, view, router } = defineProps<{
 defineComponent({
   components: {
     "keep-alive-view": KeepAliveView,
-    // Home,
-    // Film,
-    // Search,
-    // HardDrive,
-    // Users,
   },
 });
 
-// const routerState = ref(router.state);
-const curPathname = ref(router.pathname);
+const curView = ref(view.curView);
 const subViews = ref(view.subViews);
-function gotoPage(url: string) {
-  router.push(url);
+function gotoPage(view: RouteViewCore) {
+  homeLayout.showSubView(view);
 }
 function logout() {
   app.user.logout();
 }
-// const { app, view, router } = props;
-
-// console.log("[PAGE]home/layout", view, router);
 
 view.onSubViewsChange((nextSubViews) => {
-  // setSubViews(nextSubViews);
-  console.log("[PAGE]home/layout - view.onSubViewsChange", nextSubViews);
   subViews.value = nextSubViews;
 });
-view.onMatched((subView) => {
-  console.log("[LAYOUT]home/layout - view.onMatched", view.curView?._name, view.prevView?._name, subView._name);
-  if (subView === view.curView) {
-    return;
-  }
-  const prevView = view.curView;
-  view.prevView = prevView;
-  view.curView = subView;
-  if (!view.subViews.includes(subView)) {
-    view.appendSubView(subView);
-  }
-  subView.show();
-  if (view.prevView) {
-    view.prevView.hide();
-  }
+view.onCurViewChange((nextCurView) => {
+  curView.value = nextCurView;
 });
-view.onLayered(() => {
-  console.log("[LAYOUT]home/layout - view.onLayered");
-});
-view.onUncover(() => {
-  console.log("[LAYOUT]home/layout - view.onUncover");
-});
-// 因为 home layout 和 playing page 是共存的，所以切换到 playing page 时，home layout 也会检查是否匹配，结果是不匹配
-// 所以给 home layout 加了个 index
-view.onNotFound(() => {
-  console.log("[LAYOUT]home/layout - view.onNotFound", view.subViews);
-  // view.appendSubView(aView);
-  // view.curView = aView;
-  // view.curView.show();
-});
-router.onPathnameChange(({ pathname, type }) => {
-  console.log("[LAYOUT]home/layout - router.onPathnameChange", view.state.visible, view.state.layered);
-  curPathname.value = pathname;
-  if (view.state.layered) {
-    return;
-  }
-  view.checkMatch({ pathname, type });
-});
-view.checkMatch(router._pending);
 </script>
 
 <template>
@@ -91,7 +51,7 @@ view.checkMatch(router._pending);
       <div class="box-content flex opacity-100">
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage('/home/index')"
+          @click="gotoPage(homeIndexPage)"
         >
           <div>
             <Home color="white" :size="32" class="w-5 h-5" />
@@ -99,7 +59,7 @@ view.checkMatch(router._pending);
           <div
             :class="{
               'mt-2 text-sm text-center': true,
-              underline: curPathname === `${NavigatorCore.prefix}/home/index`,
+              underline: curView === homeIndexPage,
             }"
           >
             首页
@@ -107,7 +67,7 @@ view.checkMatch(router._pending);
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage('/home/movie')"
+          @click="gotoPage(homeMoviePage)"
         >
           <div>
             <Home color="white" :size="32" class="w-5 h-5" />
@@ -115,7 +75,7 @@ view.checkMatch(router._pending);
           <div
             :class="{
               'mt-2 text-sm text-center': true,
-              underline: curPathname === `${NavigatorCore.prefix}/home/movie`,
+              underline: curView === homeMoviePage,
             }"
           >
             电影
@@ -123,7 +83,7 @@ view.checkMatch(router._pending);
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage('/home/search_tv')"
+          @click="gotoPage(homeTVSearchPage)"
         >
           <div>
             <Search color="white" :size="32" class="w-5 h-5" />
@@ -131,7 +91,7 @@ view.checkMatch(router._pending);
           <div
             :class="{
               'mt-2 text-sm text-center': true,
-              underline: curPathname === `${NavigatorCore.prefix}/home/search_tv`,
+              underline: curView === homeMovieSearchPage || curView === homeTVSearchPage,
             }"
           >
             搜索
@@ -139,7 +99,7 @@ view.checkMatch(router._pending);
         </div>
         <div
           class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage('/home/history')"
+          @click="gotoPage(homeHistoryPage)"
         >
           <div>
             <HardDrive color="white" :size="32" class="w-5 h-5" />
@@ -147,7 +107,7 @@ view.checkMatch(router._pending);
           <div
             :class="{
               'mt-2 text-sm text-center': true,
-              underline: curPathname === `${NavigatorCore.prefix}/home/history`,
+              underline: curView === homeHistoryPage,
             }"
           >
             观看记录

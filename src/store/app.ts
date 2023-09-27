@@ -10,7 +10,9 @@ import { NavigatorCore } from "@/domains/navigator";
 import { Result } from "@/types";
 
 NavigatorCore.prefix = "/pc";
-const cache = new LocalCache();
+const cache = new LocalCache({
+  key: "p_global",
+});
 const router = new NavigatorCore();
 const user = new UserCore(cache.get("user"));
 user.onLogin((profile) => {

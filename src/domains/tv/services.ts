@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 
 import { FetchParams } from "@/domains/list/typing";
+import { SubtitleResp } from "@/domains/subtitle/types";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
 import { request } from "@/utils/request";
 import { episode_to_chinese_num, minute_to_hour, relative_time_from_now, season_to_chinese_num } from "@/utils";
@@ -172,6 +173,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
         runtime: number;
         season_id: string;
         sources: MediaSourceProfileRes[];
+        subtitles: SubtitleResp[];
       }[];
     }[];
     /** 会根据用户播放历史返回正在播放的剧集，或第一集 */
@@ -185,6 +187,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
       current_time: number;
       thumbnail: string | null;
       sources: MediaSourceProfileRes[];
+      subtitles: SubtitleResp[];
     };
     cur_season: {
       id: string;
@@ -220,7 +223,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
       // 大概率会走这里
       if (matchedSeason) {
         return matchedSeason.episodes.map((episode) => {
-          const { id, name, overview, season_number, episode_number, season_id, runtime, sources } = episode;
+          const { id, name, overview, season_number, episode_number, season_id, runtime, sources, subtitles } = episode;
           const d = {
             id,
             name,
@@ -244,6 +247,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
               return `${minute}m`;
             })(),
             sources,
+            subtitles,
           };
           return d;
         });
@@ -254,8 +258,18 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
       if (cur_episode === null) {
         return null;
       }
-      const { id, name, overview, season_number, episode_number, current_time, sources, season_id, thumbnail } =
-        cur_episode;
+      const {
+        id,
+        name,
+        overview,
+        season_number,
+        episode_number,
+        current_time,
+        sources,
+        season_id,
+        thumbnail,
+        subtitles,
+      } = cur_episode;
       const d = {
         id,
         name,
@@ -267,6 +281,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
         season_text: season_to_chinese_num(season_number),
         episode_text: episode_to_chinese_num(episode_number),
         sources,
+        subtitles,
       };
       return d;
     })(),
@@ -348,12 +363,7 @@ export async function fetch_episode_profile(params: { id: string; type?: Episode
       /** 影片高度 */
       height: number;
     }[];
-    subtitles: {
-      type: number;
-      name: string;
-      language: string;
-      url: string;
-    }[];
+    subtitles: SubtitleResp[];
   }>(`/api/episode/${id}`, {
     type: params.type,
   });
@@ -400,6 +410,7 @@ export async function fetch_episodes_of_season(params: { tv_id: string; season_i
       runtime: number;
       season_id: string;
       sources: MediaSourceProfileRes[];
+      subtitles: SubtitleResp[];
     }>
   >(`/api/tv/${tv_id}/season/${season_id}/episode/list`, {
     page,
@@ -415,7 +426,7 @@ export async function fetch_episodes_of_season(params: { tv_id: string; season_i
     total,
     no_more,
     list: list.map((episode) => {
-      const { id, name, overview, season_number, episode_number, runtime, sources, season_id } = episode;
+      const { id, name, overview, season_number, episode_number, runtime, sources, season_id, subtitles } = episode;
       const d = {
         id,
         name,
@@ -439,6 +450,7 @@ export async function fetch_episodes_of_season(params: { tv_id: string; season_i
           return `${minute}m`;
         })(),
         sources,
+        subtitles,
       };
       return d;
     }),
@@ -481,12 +493,7 @@ export async function fetch_source_playing_info(body: { episode_id: string; file
       /** 影片高度 */
       height: number;
     }[];
-    subtitles: {
-      type: number;
-      name: string;
-      language: string;
-      url: string;
-    }[];
+    subtitles: SubtitleResp[];
   }>(`/api/episode/${body.episode_id}/source/${body.file_id}`);
   if (res.error) {
     return Result.Err(res.error);
@@ -542,7 +549,7 @@ export async function update_play_history(body: {
  * @param params
  * @returns
  */
-export async function fetch_play_histories(params: FetchParams) {
+export async function fetchPlayingHistories(params: FetchParams) {
   const { page, pageSize, ...rest } = params;
   const r = await request.get<
     ListResponse<{
@@ -555,6 +562,7 @@ export async function fetch_play_histories(params: FetchParams) {
       tv_id: string;
       /** 影片id */
       episode_id: string;
+      movie_id: string;
       /** 该集总时长 */
       duration: number;
       /** 看到该电视剧第几集 */
@@ -599,6 +607,7 @@ export async function fetch_play_histories(params: FetchParams) {
         name,
         tv_id,
         episode_id,
+        movie_id,
         poster_path,
         updated,
         has_update,
@@ -610,6 +619,18 @@ export async function fetch_play_histories(params: FetchParams) {
         current_time,
         thumbnail,
       } = history;
+      if (movie_id) {
+        return {
+          id,
+          movie_id,
+          name,
+          poster_path,
+          updated: relative_time_from_now(updated),
+          currentTime: current_time,
+          percent: parseFloat(((current_time / duration) * 100).toFixed(2)),
+          thumbnail,
+        };
+      }
       return {
         id,
         name,
@@ -638,7 +659,7 @@ export async function fetch_play_histories(params: FetchParams) {
     }),
   });
 }
-export type PlayHistoryItem = RequestedResource<typeof fetch_play_histories>["list"][0];
+export type PlayHistoryItem = RequestedResource<typeof fetchPlayingHistories>["list"][0];
 
 export enum MediaTypes {
   TV = 1,

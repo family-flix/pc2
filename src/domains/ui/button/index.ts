@@ -1,5 +1,5 @@
 import { BaseDomain } from "@/domains/base";
-import { SelectionCore } from "@/domains/cur";
+import { RefCore } from "@/domains/cur";
 import { Handler } from "mitt";
 
 enum Events {
@@ -19,7 +19,7 @@ type ButtonProps<T = unknown> = {
 };
 export class ButtonCore<T = unknown> extends BaseDomain<TheTypesOfEvents<T>> {
   id = this.uid();
-  cur: SelectionCore<T>;
+  cur: RefCore<T>;
 
   state: ButtonState = {
     loading: false,
@@ -29,7 +29,7 @@ export class ButtonCore<T = unknown> extends BaseDomain<TheTypesOfEvents<T>> {
   constructor(options: Partial<{ _name: string } & ButtonProps<T>> = {}) {
     super(options);
 
-    this.cur = new SelectionCore();
+    this.cur = new RefCore();
     const { onClick } = options;
     if (onClick) {
       this.onClick(() => {

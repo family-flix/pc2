@@ -9,6 +9,7 @@ import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
 import { ViewComponentProps } from "@/types";
 import LazyImage from "@/components/ui/Image.vue";
+import { rootView, tvPlayingPage } from "@/store/views";
 
 const { app, router } = defineProps<ViewComponentProps>();
 defineComponent({
@@ -34,7 +35,13 @@ const scrollView = new ScrollViewCore();
 const tvResponse = ref(seasonList.response);
 function gotoTVPlaying(season: { id: string; tv_id: string }) {
   const { id, tv_id } = season;
-  router.push(`/tv/play/${tv_id}?season_id=${id}`);
+  tvPlayingPage.params = {
+    id: tv_id,
+  };
+  tvPlayingPage.query = {
+    season_id: id,
+  };
+  rootView.layerSubView(tvPlayingPage);
 }
 
 seasonList.onStateChange((nextResponse) => {

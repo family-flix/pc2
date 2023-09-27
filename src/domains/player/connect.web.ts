@@ -58,9 +58,12 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     player.handleEnd();
   };
   $video.onvolumechange = (event) => {
-    console.log("[COMPONENT]VideoPlayer/connect - $video.onvolumechange");
     const { volume } = event.currentTarget as HTMLVideoElement;
     const cur_volume = volume;
+    // console.log("[COMPONENT]VideoPlayer/connect - $video.onvolumechange", cur_volume, player._curVolume);
+    if (player._curVolume === cur_volume) {
+      return;
+    }
     player.handleVolumeChange(cur_volume);
   };
   $video.onresize = () => {
@@ -114,6 +117,20 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     },
     setVolume(volume: number) {
       $video.volume = volume;
+    },
+    setRate(rate: number) {
+      $video.playbackRate = rate;
+    },
+    showSubtitle() {
+      if ($video.textTracks[0]) {
+        $video.textTracks[0].mode = "showing";
+      }
+    },
+    hideSubtitle() {
+      // console.log("[DOMAIN]player/connect - hideSubtitle", $video.textTracks[0]);
+      if ($video.textTracks[0]) {
+        $video.textTracks[0].mode = "hidden";
+      }
     },
   });
 }

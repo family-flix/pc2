@@ -25,7 +25,7 @@ function handleScroll(event: UIEvent) {
     contentHeight: $content.scrollHeight,
   });
   const target = event.currentTarget as HTMLDivElement;
-  store.scroll({
+  store.handleScroll({
     scrollTop: target.scrollTop,
   });
 }

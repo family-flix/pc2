@@ -1,58 +1,48 @@
 <script setup lang="ts">
 import { defineComponent, ref } from "vue";
 
-import { fetch_play_histories, PlayHistoryItem } from "@/domains/tv/services";
-import { ListCore } from "@/domains/list";
-import { ScrollViewCore } from "@/domains/ui/scroll-view";
-import { RequestCore } from "@/domains/request";
-import { ViewComponentProps } from "@/types";
-import { ImageCore } from "@/domains/ui/image";
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
-// import { LazyImage } from "@/components/ui/image";
+import { ScrollViewCore } from "@/domains/ui/scroll-view";
+import { fetchPlayingHistories, PlayHistoryItem } from "@/domains/tv/services";
+import { ListCore } from "@/domains/list";
+import { RequestCore } from "@/domains/request";
+import { ViewComponentProps } from "@/types";
+import { moviePlayingPage, rootView, tvPlayingPage } from "@/store/views";
 
-const helper = new ListCore(new RequestCore(fetch_play_histories));
-const scroll = new ScrollViewCore();
+const helper = new ListCore(new RequestCore(fetchPlayingHistories));
+const scroll = new ScrollViewCore({
+  onReachBottom() {
+    helper.loadMore();
+  },
+});
 
 const { app, view, router } = defineProps<ViewComponentProps>();
 defineComponent({
   "scroll-view": ScrollView,
   "list-view": ListView,
 });
+// const response = refDomain(helper.response);
 const response = ref(helper.response);
 function gotoPlyingPage(history: PlayHistoryItem) {
-  const { tv_id } = history;
+  const { tv_id, movie_id } = history;
   if (tv_id) {
-    router.push(`/tv/play/${tv_id}`);
+    tvPlayingPage.params = {
+      id: tv_id,
+    };
+    rootView.layerSubView(tvPlayingPage);
     return;
   }
-  // router.push(`/movie/play/${movie_id}`);
+  if (movie_id) {
+    moviePlayingPage.params = {
+      id: movie_id,
+    };
+    rootView.layerSubView(moviePlayingPage);
+    return;
+  }
 }
-// view.onReady(() => {
-//   console.log("home/history ready");
-// });
-// view.onMounted(() => {
-//   console.log("home/history mounted");
-// });
-// view.onShow(() => {
-//   console.log("home/history show");
-// });
-// view.onHidden(() => {
-//   console.log("home/history hide");
-// });
-scroll.onReachBottom(() => {
-  helper.loadMore();
-});
-helper.onStateChange((nextResponse) => {
-  response.value = {
-    ...nextResponse,
-    dataSource: nextResponse.dataSource.map((media) => {
-      return {
-        ...media,
-        thumbnail: ImageCore.url(media.thumbnail),
-      };
-    }),
-  };
+helper.onStateChange((nextState) => {
+  response.value = nextState;
 });
 helper.init();
 </script>
@@ -101,6 +91,15 @@ helper.init();
                 <p class="mx-2 text-gray-500">·</p>
                 <p class="text-gray-500">{{ history.season }}</p>
               </div>
+              <div class="mt-2">{{ history.updated }} 看到 {{ history.percent }}</div>
+            </div>
+          </template>
+          <template v-if="history.movie_id">
+            <div class="relative">
+              <img class="w-full min-h-[180px] object-cover" :src="history.poster_path" :alt="history.name" />
+            </div>
+            <div class="relative flex-1 max-w-sm overflow-hidden text-ellipsis mt-2 mb-8">
+              <h2 class="text-2xl">{{ history.name }}</h2>
               <div class="mt-2">{{ history.updated }} 看到 {{ history.percent }}</div>
             </div>
           </template>

@@ -2,7 +2,7 @@
 /**
  * @file 不销毁的路由视图
  */
-import { ref, toRefs, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 
 import { RouteViewCore } from "@/domains/route_view";
 
@@ -12,20 +12,19 @@ const { store, className, index } = defineProps<{
   index: number;
 }>();
 
-console.log("[COMPONENT]stack-route-view - render", className);
+// console.log("[COMPONENT]stack-route-view - render", className);
 
 const state = ref(store.state);
-
 store.ready();
 onMounted(() => {
   if (store.isMounted) {
     return;
   }
-  console.log("[COMPONENT]stack-route-view - useEffect");
-  store.mounted();
+  // console.log("[COMPONENT]stack-route-view - useEffect");
+  store.setMounted();
   store.showed();
   return () => {
-    store.unmounted();
+    store.setUnmounted();
   };
 });
 
@@ -37,11 +36,9 @@ store.onStateChange((nextState) => {
 </script>
 
 <template>
-  <div
-    :class="className"
-    :style="{ 'z-index': index }"
-    :data-state="state.visible ? 'open' : 'closed'"
-  >
-    <slot></slot>
-  </div>
+  <block v-if="state.mounted">
+    <div :class="className" :style="{ 'z-index': index }" :data-state="state.visible ? 'open' : 'closed'">
+      <slot></slot>
+    </div>
+  </block>
 </template>

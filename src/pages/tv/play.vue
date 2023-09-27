@@ -1,23 +1,26 @@
 <script setup lang="ts">
 import { ref, defineComponent } from "vue";
+import { ArrowLeft, Eye, EyeOff } from "lucide-vue-next";
 
-import { Application } from "@/domains/app";
+import { reportSomething } from "@/services";
 import { PlayerCore } from "@/domains/player";
-import { ElementCore } from "@/domains/ui/element";
-import { RouteViewCore } from "@/domains/route_view";
 import { TVCore } from "@/domains/tv";
-import Video from "@/components/Video.vue";
 import { EpisodeResolutionTypes } from "@/domains/tv/constants";
+import { createVVTSubtitle } from "@/domains/subtitle/utils";
+import { RequestCore } from "@/domains/request";
+import { SubtitleResp } from "@/domains/subtitle/types";
+import { RefCore } from "@/domains/cur";
+import { rootView } from "@/store/views";
 import { ViewComponentProps } from "@/types";
+import Video from "@/components/Video.vue";
 
 defineComponent({
   components: {
     Video,
   },
 });
-const { app, router, view } = defineProps<ViewComponentProps>();
+const { app, view } = defineProps<ViewComponentProps>();
 
-// const helper = new ListCore(new RequestCore(fetch_tv_list), { pageSize: 20 });
 const { type: resolution, volume } = app.cache.get<{
   type: EpisodeResolutionTypes;
   volume: number;
@@ -29,13 +32,36 @@ const tv = new TVCore({
   resolution,
 });
 const player = new PlayerCore({ app, volume });
-const video = new ElementCore({});
+const curReport = new RefCore<string>({
+  onChange(v) {
+    curReportValue.value = v;
+  },
+});
+const reportRequest = new RequestCore(reportSomething, {
+  onLoading(loading) {
+    // reportConfirmDialog.okBtn.setLoading(loading);
+  },
+  onSuccess() {
+    app.tip({
+      text: ["提交成功"],
+    });
+    // reportConfirmDialog.hide();
+    // reportSheet.hide();
+  },
+  onFailed(error) {
+    app.tip({
+      text: ["提交失败", error.message],
+    });
+  },
+});
 
-// const response = ref(helper.response);
 const profile = ref(tv.profile);
 const curSource = ref(tv.curSource);
+const subtitleState = ref(tv.subtitle);
+const curReportValue = ref(curReport.value);
+const rate = ref(player.state.rate);
 function back() {
-  router.back();
+  rootView.uncoverPrevView();
 }
 function fetchEpisodesOfSeason(season: any) {
   tv.fetchEpisodesOfSeason(season);
@@ -43,11 +69,21 @@ function fetchEpisodesOfSeason(season: any) {
 function playEpisode(episode: any) {
   tv.playEpisode(episode);
 }
-function changeSource(source: any) {
+function changeSource(source: { file_id: string }) {
   tv.changeSource(source);
 }
-function changeResolution(type: any) {
+function changeResolution(type: EpisodeResolutionTypes) {
   tv.changeResolution(type);
+}
+function changeRate(rate: number) {
+  player.changeRate(rate);
+}
+function loadSubtitle(subtitle: SubtitleResp) {
+  tv.loadSubtitleFile(subtitle, tv.currentTime);
+}
+function toggleSubtitleVisible() {
+  player.toggleSubtitleVisible();
+  tv.toggleSubtitleVisible();
 }
 function loadMoreEpisode() {
   tv.episodeList.loadMore();
@@ -75,10 +111,8 @@ const players: { icon: string; name: string; scheme: string }[] = [
   },
 ];
 
-// console.log("[PAGE]play - useInitialize");
 app.onHidden(() => {
   player.pause();
-  // tv.updatePlayProgress();
 });
 app.onShow(() => {
   console.log("[PAGE]play - app.onShow", player.currentTime);
@@ -87,24 +121,16 @@ app.onShow(() => {
 });
 view.onHidden(() => {
   player.pause();
-  // tv.updatePlayProgress();
 });
-// view.onUnmounted(() => {
-//   player.destroy();
-// });
-// video.onMounted(() => {
-//   connect(videoRef.current!, player);
-// });
-
 tv.onProfileLoaded((profile) => {
   app.setTitle(tv.getTitle().join(" - "));
   const { curEpisode } = profile;
   // console.log("[PAGE]play - tv.onProfileLoaded", curEpisode.name);
-  tv.playEpisode(curEpisode, {
-    currentTime: curEpisode.currentTime,
-    thumbnail: curEpisode.thumbnail,
-  });
+  tv.playEpisode(curEpisode, { currentTime: curEpisode.currentTime, thumbnail: curEpisode.thumbnail });
   player.setCurrentTime(curEpisode.currentTime);
+});
+tv.onSubtitleLoaded((subtitle) => {
+  player.setSubtitle(createVVTSubtitle(subtitle));
 });
 tv.onEpisodeChange((nextEpisode) => {
   app.setTitle(tv.getTitle().join(" - "));
@@ -116,22 +142,26 @@ tv.onEpisodeChange((nextEpisode) => {
 tv.onStateChange((nextProfile) => {
   profile.value = nextProfile;
 });
+tv.onSubtitleChange((l) => {
+  subtitleState.value = l;
+});
 tv.onTip((msg) => {
   app.tip(msg);
 });
 tv.onBeforeNextEpisode(() => {
   player.pause();
 });
+tv.onResolutionChange(({ type }) => {
+  console.log("[PAGE]play - player.onResolutionChange", type);
+  app.cache.merge("player_settings", {
+    type,
+  });
+});
 tv.onSourceChange((mediaSource) => {
   console.log("[PAGE]play - tv.onSourceChange", mediaSource.currentTime);
-  const { width, height } = mediaSource;
-  const h = Math.ceil((height / width) * app.screen.width);
   player.pause();
+  player.setSize({ width: mediaSource.width, height: mediaSource.height });
   player.loadSource(mediaSource);
-  player.setSize({
-    width: app.screen.width,
-    height: h,
-  });
   player.setCurrentTime(mediaSource.currentTime);
   curSource.value = mediaSource;
 });
@@ -150,6 +180,9 @@ player.onVolumeChange(({ volume }) => {
   app.cache.merge("player_settings", {
     volume,
   });
+});
+player.onRateChange((nextState) => {
+  rate.value = nextState.rate;
 });
 player.onProgress(({ currentTime, duration }) => {
   // console.log("[PAGE]TVPlaying - onProgress", currentTime);
@@ -170,34 +203,22 @@ player.onEnd(() => {
   console.log("[PAGE]play - player.onEnd");
   tv.playNextEpisode();
 });
-player.onVolumeChange(({ volume }) => {
-  console.log("[PAGE]play - player.onVolumeChange", volume);
-});
-player.onSizeChange(({ height }) => {
-  console.log("[PAGE]play - player.onSizeChange");
-});
 player.onResolutionChange(({ type }) => {
   console.log("[PAGE]play - player.onResolutionChange", type);
   player.setCurrentTime(tv.currentTime);
 });
-tv.onResolutionChange(({ type }) => {
-  console.log("[PAGE]play - player.onResolutionChange", type);
-  app.cache.merge("player_settings", {
-    type,
-  });
-});
-// tv.onBeforeChangeSource(() => {
-//   player.pause();
-// });
 player.onSourceLoaded(() => {
   console.log("[PAGE]play - player.onSourceLoaded", tv.currentTime);
 });
 // console.log("[PAGE]play - before player.onError");
 player.onError((error) => {
   console.log("[PAGE]play - player.onError", error);
-  // const token = "lg9lT9e03WPcmBn";
-  // router.replaceSilently(`/out_players?token=${token}&tv_id=${view.params.id}`);
-  app.tip({ text: ["视频加载错误", error.message] });
+  (() => {
+    // if (error.message.includes("格式")) {
+    //   return;
+    // }
+    app.tip({ text: ["视频加载错误", error.message] });
+  })();
   player.pause();
 });
 player.onUrlChange(async ({ url, thumbnail }) => {
@@ -218,7 +239,6 @@ player.onUrlChange(async ({ url, thumbnail }) => {
   }
   player.load(url);
 });
-console.log("[PAGE]tv/play - before fetch tv profile", view.params.id);
 tv.fetchProfile(view.params.id, {
   season_id: view.query.season_id,
 });
@@ -226,7 +246,9 @@ tv.fetchProfile(view.params.id, {
 
 <template>
   <div class="relative flex flex-wrap w-full h-screen bg-[#14161a]">
-    <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">返回</div>
+    <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">
+      <ArrowLeft :size="32" />
+    </div>
     <div class="flex-1 flex items-center w-full h-full bg-black">
       <Video :store="player"></Video>
     </div>
@@ -298,6 +320,52 @@ tv.fetchProfile(view.params.id, {
                   @click="changeResolution(resolution.type)"
                 >
                   {{ resolution.typeText }}
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="mt-8 text-white">
+          <div>播放速率</div>
+          <div className="">
+            <template v-for="rateOpt in [0.5, 0.75, 1, 1.25, 1.5, 2]">
+              <div class="">
+                <div
+                  :class="{
+                    'p-4 rounded cursor-pointer': true,
+                    'bg-slate-500': rate === rateOpt,
+                  }"
+                  @click="changeRate(rateOpt)"
+                >
+                  {{ rateOpt }}x
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="mt-8 text-white">
+          <div class="flex justify-between">
+            <div>字幕</div>
+            <div @click="toggleSubtitleVisible">
+              <block v-if="subtitleState.visible">
+                <Eye :size="24" />
+              </block>
+              <block v-else>
+                <EyeOff :size="24" />
+              </block>
+            </div>
+          </div>
+          <div className="">
+            <template v-for="subtitle in subtitleState.others">
+              <div class="">
+                <div
+                  :class="{
+                    'p-4 rounded cursor-pointer': true,
+                    'bg-slate-500': subtitle.selected,
+                  }"
+                  @click="loadSubtitle(subtitle)"
+                >
+                  {{ subtitle.name }}
                 </div>
               </div>
             </template>

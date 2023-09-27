@@ -1,4 +1,4 @@
-import { Application } from "@/domains/app";
+import { Application, MEDIA } from "@/domains/app";
 
 export function connect(app: Application) {
   const { router } = app;
@@ -8,6 +8,14 @@ export function connect(app: Application) {
   };
   app.setTitle = (title: string) => {
     document.title = title;
+  };
+  app.copy = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
   };
   window.addEventListener("DOMContentLoaded", () => {
     // 1
@@ -38,6 +46,7 @@ export function connect(app: Application) {
       width: innerWidth,
       height: innerHeight,
     };
+    // console.log("resize", size);
     // app.emit(app.Events.Resize, { width: innerWidth, height: innerHeight });
     app.resize(size);
   });
@@ -51,7 +60,49 @@ export function connect(app: Application) {
     }
     app.emit(app.Events.Show);
   });
+  const ua = navigator.userAgent.toLowerCase();
+  app.setEnv({
+    wechat: ua.indexOf("micromessenger") !== -1,
+  });
 
+  const media = window.matchMedia(MEDIA);
+  let curTheme = "light";
+  const getSystemTheme = (e?: MediaQueryList | MediaQueryListEvent) => {
+    console.log("[Domain]app/connect - handleMediaQuery");
+    if (!e) {
+      e = window.matchMedia(MEDIA);
+    }
+    const isDark = e.matches;
+    const systemTheme = isDark ? "dark" : "light";
+    curTheme = systemTheme;
+    app.theme = systemTheme;
+    return systemTheme;
+  };
+  media.addListener(getSystemTheme);
+  let attribute = "data-theme";
+  const defaultTheme = "system";
+  const defaultThemes = ["light", "dark"];
+  const colorSchemes = ["light", "dark"];
+  const attrs = defaultThemes;
+  app.applyTheme = () => {
+    const d = document.documentElement;
+    const name = curTheme;
+    if (attribute === "class") {
+      d.classList.remove(...attrs);
+      if (name) d.classList.add(name);
+    } else {
+      if (name) {
+        d.setAttribute(attribute, name);
+      } else {
+        d.removeAttribute(attribute);
+      }
+    }
+    const fallback = colorSchemes.includes(defaultTheme) ? defaultTheme : null;
+    const colorScheme = colorSchemes.includes(curTheme) ? curTheme : fallback;
+    // @ts-ignore
+    d.style.colorScheme = colorScheme;
+  };
+  app.getSystemTheme = getSystemTheme;
   const { availHeight, availWidth } = window.screen;
   if (window.navigator.userAgent.match(/iphone/i)) {
     const matched = [
@@ -108,12 +159,12 @@ export function connect(app: Application) {
     event.preventDefault();
     app.emit(app.Events.ClickLink, { href });
   });
-  router.onBack(() => {
+  router.back = () => {
     window.history.back();
-  });
-  router.onReload(() => {
+  };
+  router.reload = () => {
     window.location.reload();
-  });
+  };
   router.onPushState(({ from, path }) => {
     // router.log("[Application ]- onPushState", path);
     window.history.pushState(

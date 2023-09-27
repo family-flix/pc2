@@ -20,6 +20,9 @@ dependencies:
   lodash:
     specifier: ^4.17.21
     version: registry.npmmirror.com/lodash@4.17.21
+  lucide-vue-next:
+    specifier: ^0.279.0
+    version: 0.279.0(vue@3.3.4)
   mitt:
     specifier: ^3.0.0
     version: registry.npmmirror.com/mitt@3.0.0
@@ -284,6 +287,14 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /lucide-vue-next@0.279.0(vue@3.3.4):
+    resolution: {integrity: sha512-zsFptHEGB9Epm9MZUoiqNyvw2ddq/MLOUVy1BXT4TCNJ2hW9gcuKB2oZnMk8J1Yl94gjsX/vVFynY39i9ICLkw==}
+    peerDependencies:
+      vue: '>=3.0.1'
+    dependencies:
+      vue: registry.npmmirror.com/vue@3.3.4
+    dev: false
 
   registry.npmmirror.com/@alloc/quick-lru@5.2.0:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==, registry: https://registry.npmjs.org/, tarball: https://registry.npmmirror.com/@alloc/quick-lru/-/quick-lru-5.2.0.tgz}
