@@ -23,10 +23,10 @@ onMounted(() => {
     return;
   }
   //   console.log("[COMPONENT]keep-alice-route-view - useEffect");
-  store.mounted();
+  store.setMounted();
   store.showed();
   return () => {
-    store.unmounted();
+    store.setUnmounted();
   };
 });
 
