@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineComponent, ref } from "vue";
-import { fetch_season_list, fetch_tv_list } from "@/domains/tv/services";
+import { fetchSeasonList } from "@/domains/tv/services";
 import { ListCore } from "@/domains/list";
 import { getPageSizeByDeviceSize } from "@/domains/list/utils";
 import { RequestCore } from "@/domains/request";
@@ -16,7 +16,7 @@ defineComponent({
   "lazy-image": LazyImage,
 });
 
-const seasonList = new ListCore(new RequestCore(fetch_season_list), {
+const seasonList = new ListCore(new RequestCore(fetchSeasonList), {
   pageSize: getPageSizeByDeviceSize(app.curDeviceSize).pageSize,
   search: (() => {
     const { language = [] } = app.cache.get("tv_search", {
