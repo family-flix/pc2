@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
 import { FetchParams } from "@/domains/list/typing";
-import { SubtitleResp } from "@/domains/subtitle/types";
+import { SubtitleFileResp } from "@/domains/subtitle/types";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
 import { MediaOriginCountry, SeasonGenresTexts, SeasonMediaOriginCountryTexts } from "@/constants";
 import { request } from "@/utils/request";
@@ -173,7 +173,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
         runtime: number;
         season_id: string;
         sources: MediaSourceProfileRes[];
-        subtitles: SubtitleResp[];
+        subtitles: SubtitleFileResp[];
       }[];
     }[];
     /** 会根据用户播放历史返回正在播放的剧集，或第一集 */
@@ -187,7 +187,7 @@ export async function fetch_tv_and_cur_episode(params: { tv_id: string; season_i
       current_time: number;
       thumbnail: string | null;
       sources: MediaSourceProfileRes[];
-      subtitles: SubtitleResp[];
+      subtitles: SubtitleFileResp[];
     };
     cur_season: {
       id: string;
@@ -363,7 +363,7 @@ export async function fetch_episode_profile(params: { id: string; type?: Episode
       /** 影片高度 */
       height: number;
     }[];
-    subtitles: SubtitleResp[];
+    subtitles: SubtitleFileResp[];
   }>(`/api/episode/${id}`, {
     type: params.type,
   });
@@ -410,7 +410,7 @@ export async function fetch_episodes_of_season(params: { tv_id: string; season_i
       runtime: number;
       season_id: string;
       sources: MediaSourceProfileRes[];
-      subtitles: SubtitleResp[];
+      subtitles: SubtitleFileResp[];
     }>
   >(`/api/tv/${tv_id}/season/${season_id}/episode/list`, {
     page,
@@ -493,7 +493,7 @@ export async function fetch_source_playing_info(body: { episode_id: string; file
       /** 影片高度 */
       height: number;
     }[];
-    subtitles: SubtitleResp[];
+    subtitles: SubtitleFileResp[];
   }>(`/api/episode/${body.episode_id}/source/${body.file_id}`);
   if (res.error) {
     return Result.Err(res.error);

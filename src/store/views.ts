@@ -4,16 +4,16 @@ import HomeLayout from "@/pages/home/layout.vue";
 import HomeIndexPage from "@/pages/home/index.vue";
 import HomeTVSearchPage from "@/pages/home/search/tv.vue";
 import HomeMovieSearchPage from "@/pages/home/search/movie.vue";
-import HomeMoviePage from "@/pages/home/movie.vue";
+// import HomeMoviePage from "@/pages/home/movie.vue";
 import HomeHistoryPage from "@/pages/home/history.vue";
-import FakeHomePage from "@/pages/fake-home/index.vue";
+// import FakeHomePage from "@/pages/fake-home/index.vue";
 // import { HomeSearchPage } from "@/pages/home/search";
 // import { HomeMyPage } from "@/pages/home/my";
 /** 视频播放 */
-import TVPlayingPage from "@/pages/tv/play.vue";
+// import TVPlayingPage from "@/pages/tv/play.vue";
 import SeasonPlayingPageV2 from "@/pages/tv/play_v2.vue";
 import MoviePlayingPageV2 from "@/pages/movie/play_v2.vue";
-import MoviePlayingPage from "@/pages/movie/play.vue";
+// import MoviePlayingPage from "@/pages/movie/play.vue";
 // import MoviePlayingPageV2 from "@/pages/movie/play.vue";
 /** 其他 */
 import Test1Page from "@/pages/test1/index.vue";
@@ -37,11 +37,11 @@ export const homeIndexPage = new RouteViewCore({
 });
 // mainLayout.curView = aView;
 // mainLayout.appendSubView(aView);
-export const homeMoviePage = new RouteViewCore({
-  key: "/home/movie",
-  title: "电影",
-  component: HomeMoviePage,
-});
+// export const homeMoviePage = new RouteViewCore({
+//   key: "/home/movie",
+//   title: "电影",
+//   component: HomeMoviePage,
+// });
 export const homeTVSearchPage = new RouteViewCore({
   key: "/search_tv",
   title: "搜索电视剧",

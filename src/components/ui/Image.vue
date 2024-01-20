@@ -34,10 +34,10 @@ const className = cn(props.class, "flex items-center justify-center text-w-fg-2 
 <template>
   <div ref="imgRef" :class="className">
     <template v-if="state.step === ImageStep.Failed">
-      <ImageOff className="w-16 h-16 text-w-bg-3" :size="64" />
+      <ImageOff :size="64" />
     </template>
     <template v-else-if="state.step === ImageStep.Pending">
-      <Image className="w-16 h-16 text-w-bg-3" :size="64" />
+      <Image :size="64" />
     </template>
     <template v-else-if="[ImageStep.Loading, ImageStep.Loaded].includes(state.step)">
       <img

@@ -226,6 +226,7 @@ class SeasonPlayingPageView {
   });
 
   visible = true;
+  // @ts-ignore
   timer: null | NodeJS.Timeout = null;
 
   constructor(props: { view: RouteViewCore }) {

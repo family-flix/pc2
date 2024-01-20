@@ -326,12 +326,12 @@ export class TVCore extends BaseDomain<TheTypesOfEvents> {
     this._subtitles = subtitles;
     // console.log("[DOMAIN]tv/index - loadSubtitle2 ", subtitles);
     const subtitleFile = (() => {
-      const matched = subtitles.find((s) => {
-        return s.lang === "chi";
-      });
-      if (matched) {
-        return matched;
-      }
+      // const matched = subtitles.find((s) => {
+      //   return s.lang === "chi";
+      // });
+      // if (matched) {
+      //   return matched;
+      // }
       const first = subtitles[0];
       // console.log("[DOMAIN]tv/index - first", first, subtitles);
       if (first) {

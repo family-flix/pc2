@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
 import { FetchParams } from "@/domains/list/typing";
-import { SubtitleResp } from "@/domains/subtitle/types";
+import { SubtitleFileResp } from "@/domains/subtitle/types";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
 import { MediaOriginCountry, MovieMediaGenresTexts, MovieMediaOriginCountryTexts } from "@/constants";
 import { request } from "@/utils/request";
@@ -27,7 +27,7 @@ export async function fetch_movie_and_cur_source(params: { movie_id: string }) {
       file_name: string;
       parent_paths: string;
     }[];
-    subtitles: SubtitleResp[];
+    subtitles: SubtitleFileResp[];
     cur_source: {
       file_id: string;
       file_name: string;
@@ -93,7 +93,7 @@ export async function fetch_movie_profile(params: { id: string; type?: MediaReso
       /** 影片高度 */
       height: number;
     }[];
-    subtitles: SubtitleResp[];
+    subtitles: SubtitleFileResp[];
   }>(`/api/movie/${id}`, {
     type: params.type,
   });
