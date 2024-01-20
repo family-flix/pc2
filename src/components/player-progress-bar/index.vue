@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { PlayerCore } from "@/domains/player";
 import { cn, seconds_to_hour } from "@/utils";
 
@@ -17,6 +17,16 @@ const progress = ref(store._progress);
 const times = ref({
   currentTime: seconds_to_hour(store._currentTime),
   duration: seconds_to_hour(store._duration),
+});
+onMounted(() => {
+  document.addEventListener("mousemove", handleTouchMove);
+  document.addEventListener("mouseup", handleTouchEnd);
+  document.addEventListener("pointerup", handleTouchEnd);
+});
+onUnmounted(() => {
+  document.removeEventListener("mousemove", handleTouchMove);
+  document.removeEventListener("mouseup", handleTouchEnd);
+  document.removeEventListener("pointerup", handleTouchEnd);
 });
 
 store.onStateChange((nextState) => {
@@ -40,43 +50,32 @@ const updateProgressBar = (touch: { clientX: number }) => {
   store.adjustProgressManually(clampedProgress);
   progress.value = clampedProgress * 100;
 };
-// const handlerTouchMove = (event: TouchEvent) => {
-//   event.stopPropagation();
-//   if (isDragRef === false) {
-//     return;
-//   }
-//   const { clientX } = event.touches[0];
-//   console.log("[COMPONENT]handlerTouchMove", clientX);
-//   updateProgressBar({ clientX });
-// };
-// const handlerTouchEnd = (event: TouchEvent) => {
-//   event.stopPropagation();
-//   console.log("[COMPONENT]handlerTouchEnd");
-//   isDragRef = false;
-// };
-function handleTouchEnd(event: TouchEvent) {
+function handleTouchStart(event: MouseEvent) {
   event.stopPropagation();
-  console.log("[COMPONENT]onTouchEnd");
-  isDragRef = false;
-  store.adjustCurrentTime(store.virtualProgress * store._duration);
+  console.log("[COMPONENT]onTouchStart");
+  const { clientX } = event;
+  isDragRef = true;
+  store.startAdjustCurrentTime();
+  store.pause();
+  updateProgressBar({ clientX });
 }
-function handleTouchMove(event: TouchEvent) {
+function handleTouchMove(event: MouseEvent) {
   event.stopPropagation();
   if (isDragRef === false) {
     return;
   }
-  const { clientX } = event.touches[0];
+  const { clientX } = event;
   console.log("[COMPONENT]onTouchMove", clientX);
   updateProgressBar({ clientX });
 }
-function handleTouchStart(event: TouchEvent) {
+function handleTouchEnd(event: MouseEvent) {
   event.stopPropagation();
-  console.log("[COMPONENT]onTouchStart");
-  const { touches } = event;
-  isDragRef = true;
-  store.startAdjustCurrentTime();
-  store.pause();
-  updateProgressBar({ clientX: touches[0].clientX });
+  console.log("[COMPONENT]onTouchEnd");
+  if (isDragRef === false) {
+    return;
+  }
+  isDragRef = false;
+  store.adjustCurrentTime(store.virtualProgress * store._duration);
 }
 function handleAnimationEnd(event: AnimationEvent) {
   const { currentTarget: target } = event;
@@ -92,20 +91,16 @@ function handleAnimationEnd(event: AnimationEvent) {
 </script>
 
 <template>
-  <div class="user-select-none">
+  <div class="user-select-none" @click.stop>
     <div class="flex items-center text-sm">
       <div>{{ times.currentTime }}</div>
       <div class="mx-2">/</div>
       <div>{{ times.duration }}</div>
     </div>
-    <div
-      class="__a mt-2 w-full bg-gray-300 cursor-pointer rounded-md overflow-hidden"
-      @animationend="handleAnimationEnd"
-      @touchstart="handleTouchStart"
-      @touchmove="handleTouchMove"
-      @touchend="handleTouchEnd"
-    >
-      <div class="h-[4px] bg-green-500" :style="{ width: progress + '%' }"></div>
+    <div class="py-2 cursor-pointer" @mousedown.stop="handleTouchStart">
+      <div class="__a mt-2 w-full bg-gray-300 rounded-md overflow-hidden" @animationend="handleAnimationEnd">
+        <div class="h-[4px] bg-green-500" :style="{ width: progress + '%' }"></div>
+      </div>
     </div>
   </div>
 </template>

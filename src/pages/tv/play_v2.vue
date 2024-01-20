@@ -446,7 +446,7 @@ $logic.$tv.fetchProfile(view.query.id);
           class="animate-in fade-in slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:fade-out"
         >
           <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-t to-transparent from-w-black"></div>
-          <div class="relative z-20 px-4 py-6 pt-10 text-white" @click.stop>
+          <div class="relative z-20 px-4 py-6 pt-10 text-white" @click.stop @mouseup.stop>
             <div class="px-4">
               <PlayerProgressBar :store="$logic.$player" />
             </div>
