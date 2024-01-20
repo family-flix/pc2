@@ -243,6 +243,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this._curRate = v;
     console.log("[DOMAIN]player/index - changeRate", v);
     this._abstractNode.setRate(v);
+    this.emit(Events.StateChange, { ...this.state });
     this.emit(Events.RateChange, { rate: v });
   }
   showAirplay() {

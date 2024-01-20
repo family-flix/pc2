@@ -220,6 +220,8 @@ class SeasonPlayingPageView {
   $settings = new DialogCore();
   $episodes = new DialogCore();
   $resolution = new DialogCore();
+  $source = new DialogCore();
+  $rate = new DialogCore();
 
   $episode = new DynamicContentCore({
     value: 1,
@@ -368,6 +370,15 @@ async function handleClickEpisode(episode: any) {
 function changeResolution(resolution: { type: MediaResolutionTypes }) {
   $logic.$tv.changeResolution(resolution.type);
 }
+function changeRate(rate: number) {
+  $logic.$player.changeRate(rate);
+  app.cache.merge("player_settings", {
+    rate,
+  });
+}
+function changeSourceFile(file: { id: string }) {
+  $logic.$tv.changeSourceFile(file);
+}
 function toggleFullScreen() {
   const element = pageRef.value;
   if (!element) {
@@ -388,11 +399,11 @@ $logic.$tv.fetchProfile(view.query.id);
 </script>
 
 <template>
-  <div ref="pageRef" class="relative w-full h-screen bg-black">
+  <div ref="pageRef" class="relative w-full h-screen bg-[#000000]">
     <!-- <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">
       <ArrowLeft :size="32" />
     </div> -->
-    <div class="video flex items-center w-full h-full bg-w-fg-0 dark:bg-w-bg-0">
+    <div class="video flex items-center w-full h-full bg-[#000000]">
       <Video :store="$logic.$player"></Video>
     </div>
     <div class="absolute z-0 inset-0" @click="$page.toggle">
@@ -401,10 +412,8 @@ $logic.$tv.fetchProfile(view.query.id);
           :store="$page.$top"
           class="animate-in fade-in slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:fade-out"
         >
-          <div
-            class="absolute z-10 inset-0 opacity-80 bg-gradient-to-b to-transparent from-w-fg-0 dark:from-w-bg-0"
-          ></div>
-          <div class="relative z-20 p-4 text-w-bg-0 dark:text-w-fg-0" @click.stop>
+          <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-b to-transparent from-w-black"></div>
+          <div class="relative z-20 p-4 text-w-white" @click.stop>
             <div class="flex items-center cursor-pointer" @click="rootView.uncoverPrevView">
               <div class="inline-template p-4">
                 <ArrowLeft class="w-8 h-8" />
@@ -436,10 +445,8 @@ $logic.$tv.fetchProfile(view.query.id);
           :store="$page.$bottom"
           class="animate-in fade-in slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:fade-out"
         >
-          <div
-            class="absolute z-10 inset-0 opacity-80 bg-gradient-to-t to-transparent from-w-fg-0 dark:from-w-bg-0"
-          ></div>
-          <div class="relative z-20 px-4 py-6 pt-10 text-w-bg-0 dark:text-w-fg-0" @click.stop>
+          <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-t to-transparent from-w-black"></div>
+          <div class="relative z-20 px-4 py-6 pt-10 text-white" @click.stop>
             <div class="px-4">
               <PlayerProgressBar :store="$logic.$player" />
             </div>
@@ -468,8 +475,14 @@ $logic.$tv.fetchProfile(view.query.id);
                   <Layers class="w-8 h-8" />
                   <div class="">选集</div>
                 </div>
+                <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$source.show">
+                  <div>切换源</div>
+                </div>
                 <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$resolution.show">
                   <div>{{ curSource?.typeText }}</div>
+                </div>
+                <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$rate.show">
+                  <div>{{ playerState?.rate }}x</div>
                 </div>
                 <!-- <div class="relative p-2 rounded-md">
                   <Settings class="w-8 h-8" />
@@ -533,6 +546,36 @@ $logic.$tv.fetchProfile(view.query.id);
             >
               <div class="">{{ resolution.typeText }}</div>
               <template v-if="curSource?.type === resolution.type"><CheckCheck :size="32" /></template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Dialog>
+    <Dialog :store="$page.$rate">
+      <div class="relative box-border h-full safe-bottom">
+        <div class="space-y-2">
+          <template v-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]">
+            <div
+              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              @click="changeRate(rate)"
+            >
+              <div class="">{{ rate }}x</div>
+              <template v-if="playerState.rate === rate"><CheckCheck :size="32" /></template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Dialog>
+    <Dialog :store="$page.$source">
+      <div class="relative box-border h-full safe-bottom">
+        <div class="space-y-2">
+          <template v-for="file in profile.curSource?.files">
+            <div
+              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              @click="changeSourceFile(file)"
+            >
+              <div class="">{{ file.file_name }}</div>
+              <template v-if="profile.curSource?.curSourceFileId === file.id"><CheckCheck :size="32" /></template>
             </div>
           </template>
         </div>

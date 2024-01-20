@@ -146,6 +146,10 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       const msg = this.tip({ text: ["视频还未加载完成"] });
       return Result.Err(msg);
     }
+    if (this.curSource === null) {
+      const msg = this.tip({ text: ["视频还未加载完成"] });
+      return Result.Err(msg);
+    }
     const res = await this.$source.load({ id: sourceFile.id });
     if (res.error) {
       this.tip({
@@ -153,6 +157,8 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       });
       return Result.Err(res.error);
     }
+    this.curSource.curSourceFileId = sourceFile.id;
+    this.emit(Events.StateChange, { ...this.state });
     this.emit(Events.SourceFileChange, {
       ...res.data,
       currentTime: this.currentTime,
