@@ -3,11 +3,11 @@ import dayjs from "dayjs";
 import { FetchParams } from "@/domains/list/typing";
 import { SubtitleResp } from "@/domains/subtitle/types";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
+import { MediaOriginCountry, MovieMediaGenresTexts, MovieMediaOriginCountryTexts } from "@/constants";
 import { request } from "@/utils/request";
 import { episode_to_chinese_num, minute_to_hour, relative_time_from_now, season_to_chinese_num } from "@/utils";
 
 import { MediaResolutionTypes, MediaResolutionTypeTexts } from "./constants";
-import { MediaSource, MovieGenresTexts, MovieSourceTexts } from "@/constants";
 
 /**
  * 获取电影和当前播放进度
@@ -376,13 +376,13 @@ export async function fetch_movie_list(params: FetchParams & { name: string }) {
         genres: origin_country
           .split("|")
           .map((country) => {
-            return MovieSourceTexts[country as MediaSource] ?? "unknown";
+            return MovieMediaOriginCountryTexts[country as MediaOriginCountry] ?? "unknown";
           })
           .concat(
             genres
               .split("|")
               .map((g) => {
-                return MovieGenresTexts[g];
+                return MovieMediaGenresTexts[g];
               })
               .filter(Boolean)
           ),

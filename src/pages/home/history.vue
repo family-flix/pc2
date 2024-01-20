@@ -3,12 +3,16 @@ import { defineComponent, ref } from "vue";
 
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
+import LazyImage from "@/components/ui/Image.vue";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
-import { fetchPlayingHistories, PlayHistoryItem } from "@/domains/tv/services";
+import { fetchPlayingHistories, PlayHistoryItem } from "@/domains/media/services";
 import { ListCore } from "@/domains/list";
 import { RequestCore } from "@/domains/request";
 import { ViewComponentProps } from "@/types";
 import { moviePlayingPage, rootView, tvPlayingPage } from "@/store/views";
+import { MediaTypes } from "@/constants";
+import { ImageInListCore } from "@/domains/ui/image";
+import AspectRatio from "@/components/ui/AspectRatio.vue";
 
 const helper = new ListCore(new RequestCore(fetchPlayingHistories));
 const scroll = new ScrollViewCore({
@@ -16,26 +20,32 @@ const scroll = new ScrollViewCore({
     helper.loadMore();
   },
 });
+const thumbnail = new ImageInListCore({
+  scale: 1.38,
+});
 
 const { app, view, router } = defineProps<ViewComponentProps>();
 defineComponent({
-  "scroll-view": ScrollView,
-  "list-view": ListView,
+  ScrollView,
+  ListView,
+  Image,
+  AspectRatio,
 });
 // const response = refDomain(helper.response);
 const response = ref(helper.response);
+
 function gotoPlyingPage(history: PlayHistoryItem) {
-  const { tv_id, movie_id } = history;
-  if (tv_id) {
-    tvPlayingPage.params = {
-      id: tv_id,
+  const { type, media_id } = history;
+  if (type === MediaTypes.Season) {
+    tvPlayingPage.query = {
+      id: media_id,
     };
     rootView.layerSubView(tvPlayingPage);
     return;
   }
-  if (movie_id) {
-    moviePlayingPage.params = {
-      id: movie_id,
+  if (type === MediaTypes.Movie) {
+    moviePlayingPage.query = {
+      id: media_id,
     };
     rootView.layerSubView(moviePlayingPage);
     return;
@@ -48,63 +58,48 @@ helper.init();
 </script>
 
 <template>
-  <scroll-view :store="scroll" class="pt-4">
+  <ScrollView :store="scroll" class="pt-4">
     <div class="">
-      <list-view :store="helper" class="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+      <ListView :store="helper" class="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         <div v-for="history in response.dataSource" class="cursor-pointer" @click="gotoPlyingPage(history)">
-          <template v-if="history.tv_id">
-            <div class="relative">
-              <img class="w-full min-h-[180px] object-cover" :src="history.poster_path" :alt="history.name" />
-              <div class="absolute top-1 left-1 space-y-2">
-                <div v-if="history.has_update">
-                  <div
-                    key="update_1"
-                    class="inline-flex items-center py-1 px-2 rounded-sm bg-green-300 dark:bg-green-800"
-                  >
-                    <div class="text-[14px] leading-none text-gray-800 dark:text-gray-300">在你看过后有更新</div>
-                  </div>
-                </div>
-                <div v-if="history.episode_count && history.cur_episode_count !== history.episode_count">
-                  <div class="">
-                    <div class="inline-flex items-center py-1 px-2 rounded-sm bg-green-300 dark:bg-green-800">
-                      <div class="text-[12px] leading-none text-gray-800 dark:text-gray-300">
-                        更新到第{{ history.cur_episode_count }}集
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else-if="history.episode_count && history.cur_episode_count === history.episode_count">
-                  <div class="">
-                    <div class="inline-flex items-center py-1 px-2 rounded-sm bg-green-300 dark:bg-green-800">
-                      <div class="text-[12px] leading-none text-gray-800 dark:text-gray-300">
-                        全{{ history.episode_count }}集
-                      </div>
-                    </div>
-                  </div>
+          <div class="relative w-full h-full bg-w-bg-2 rounded-lg">
+            <div class="relative w-full overflow-hidden rounded-t-md">
+              <AspectRatio :ratio="16 / 9">
+                <LazyImage
+                  class="absolute inset-0"
+                  :store="thumbnail.bind(history.thumbnail_path)"
+                  :alt="history.name"
+                />
+              </AspectRatio>
+              <div class="absolute w-full top-0 flex flex-row-reverse items-center">
+                <div class="relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
+                  {{ history.episodeCountText }}
                 </div>
               </div>
-            </div>
-            <div class="relative flex-1 max-w-sm overflow-hidden text-ellipsis mt-2 mb-8">
-              <h2 class="text-2xl">{{ history.name }}</h2>
-              <div class="flex items-center mt-2 text-xl">
-                <p class="">{{ history.episode }}</p>
-                <p class="mx-2 text-gray-500">·</p>
-                <p class="text-gray-500">{{ history.season }}</p>
+              <div class="absolute bottom-0 w-full">
+                <div class="w-full h-[2px] rounded-md bg-w-brand" :style="{ width: history.percent + '%' }"></div>
               </div>
-              <div class="mt-2">{{ history.updated }} 看到 {{ history.percent }}</div>
             </div>
-          </template>
-          <template v-if="history.movie_id">
-            <div class="relative">
-              <img class="w-full min-h-[180px] object-cover" :src="history.poster_path" :alt="history.name" />
+            <template v-if="!!history.hasUpdate">
+              <div class="absolute top-2 left-2">
+                <div class="huizhang">更新</div>
+              </div>
+            </template>
+            <div class="p-2 pb-4">
+              <div class="text-w-fg-0">{{ history.name }}</div>
+              <div class="flex items-center mt-2 text-[12px] text-w-fg-1">
+                {{ history.updated }}
+                <p class="mx-1">·</p>
+                <template v-if="history.episodeText">
+                  <p class="">{{ history.episodeText }}</p>
+                  <p class="mx-1">·</p>
+                </template>
+                {{ history.percent }}%
+              </div>
             </div>
-            <div class="relative flex-1 max-w-sm overflow-hidden text-ellipsis mt-2 mb-8">
-              <h2 class="text-2xl">{{ history.name }}</h2>
-              <div class="mt-2">{{ history.updated }} 看到 {{ history.percent }}</div>
-            </div>
-          </template>
+          </div>
         </div>
-      </list-view>
+      </ListView>
     </div>
-  </scroll-view>
+  </ScrollView>
 </template>

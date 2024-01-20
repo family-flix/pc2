@@ -1255,6 +1255,13 @@ export function minute_to_hour(value: number) {
   }
   return [null, minutes];
 }
+export function minute_to_hour2(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  const formattedHours = String(hours).padStart(2, "0");
+  const formattedMinutes = String(remainingMinutes).padStart(2, "0");
+  return `${formattedHours}:${formattedMinutes}`;
+}
 
 export function relative_time_from_now(time: string) {
   const date = dayjs(time);

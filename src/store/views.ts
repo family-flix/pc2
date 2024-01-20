@@ -11,7 +11,10 @@ import FakeHomePage from "@/pages/fake-home/index.vue";
 // import { HomeMyPage } from "@/pages/home/my";
 /** 视频播放 */
 import TVPlayingPage from "@/pages/tv/play.vue";
+import SeasonPlayingPageV2 from "@/pages/tv/play_v2.vue";
+import MoviePlayingPageV2 from "@/pages/movie/play_v2.vue";
 import MoviePlayingPage from "@/pages/movie/play.vue";
+// import MoviePlayingPageV2 from "@/pages/movie/play.vue";
 /** 其他 */
 import Test1Page from "@/pages/test1/index.vue";
 // import { NotFoundPage } from "@/pages/not-found";
@@ -64,14 +67,14 @@ export const homeLayout = new RouteViewCore({
   component: HomeLayout,
 });
 export const tvPlayingPage = new RouteViewCore({
-  key: "/tv/play/:id",
+  key: "/tv_play",
   title: "加载中...",
-  component: TVPlayingPage,
+  component: SeasonPlayingPageV2,
 });
 export const moviePlayingPage = new RouteViewCore({
-  key: "/movie/play/:id",
+  key: "/movie_play",
   title: "加载中...",
-  component: MoviePlayingPage,
+  component: MoviePlayingPageV2,
 });
 export const test1Page = new RouteViewCore({
   key: "/test1",

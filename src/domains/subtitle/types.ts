@@ -1,9 +1,20 @@
+import { MediaOriginCountry } from "@/constants";
+
+export enum SubtitleFileTypes {
+  /** 上传到服务器本地的 */
+  LocalFile = 1,
+  /** 在阿里云盘的 */
+  AliyundriveFile = 2,
+  /** 内挂字幕 */
+  MediaInnerFile = 3,
+}
+
 /** 后端返回的字幕文件 */
-export type SubtitleResp = {
+export type SubtitleFileResp = {
   id: string;
-  type: number;
+  type: SubtitleFileTypes;
   name: string;
-  lang: string;
+  language: MediaOriginCountry[];
   url: string;
 };
 
@@ -28,4 +39,4 @@ export interface SubtitleFile {
   paragraphs: SubtitleParagraph[];
 }
 
-export type SubtitleFileType = "ass" | "srt" | "vtt";
+export type SubtitleFileSuffix = "ass" | "srt" | "vtt";

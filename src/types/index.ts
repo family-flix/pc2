@@ -1,6 +1,8 @@
 import { Component } from "vue";
+// import { Response } from "@list-helper/core/typing";
 
 import { Application } from "@/domains/app";
+// import { BottomMenuCore } from "@/domains/bottom_menu";
 import { BizError } from "@/domains/error";
 import { NavigatorCore } from "@/domains/navigator";
 import { RouteViewCore } from "@/domains/route_view";
@@ -10,9 +12,7 @@ export type Resp<T> = {
   error: T extends null ? BizError : null;
 };
 export type Result<T> = Resp<T> | Resp<null>;
-export type UnpackedResult<T> = NonNullable<
-  T extends Resp<infer U> ? (U extends null ? U : U) : T
->;
+export type UnpackedResult<T> = NonNullable<T extends Resp<infer U> ? (U extends null ? U : U) : T>;
 /** 构造一个结果对象 */
 export const Result = {
   /** 构造成功结果 */
@@ -24,11 +24,7 @@ export const Result = {
     return result;
   },
   /** 构造失败结果 */
-  Err: <T>(
-    message: string | BizError | Error | Result<null>,
-    code?: string | number,
-    data: unknown = null
-  ) => {
+  Err: <T>(message: string | BizError | Error | Result<null>, code?: string | number, data: unknown = null) => {
     const result = {
       data,
       code,
@@ -75,16 +71,21 @@ export type ListResponse<T> = {
   no_more: boolean;
   list: T[];
 };
+export type ListResponseWithCursor<T> = {
+  page_size: number;
+  total: number;
+  next_marker?: string;
+  list: T[];
+};
 
-export type RequestedResource<T extends (...args: any[]) => any> =
-  UnpackedResult<Unpacked<ReturnType<T>>>;
+export type RequestedResource<T extends (...args: any[]) => any> = UnpackedResult<Unpacked<ReturnType<T>>>;
 
+export type ViewComponent = (props: ViewComponentProps) => Component | null;
 export type ViewComponentProps = {
   app: Application;
   router: NavigatorCore;
   view: RouteViewCore;
 };
-export type ViewComponent = (props: ViewComponentProps) => Component | null;
 
 export type Rect = {
   width: number;
@@ -99,11 +100,5 @@ export type Rect = {
 };
 
 export interface JSONArray extends Array<JSONValue> {}
-export type JSONValue =
-  | string
-  | number
-  | boolean
-  | JSONObject
-  | JSONArray
-  | null;
+export type JSONValue = string | number | boolean | JSONObject | JSONArray | null;
 export type JSONObject = { [Key in string]?: JSONValue };

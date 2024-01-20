@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { ref, defineComponent } from "vue";
-// import { Home, Film, Search, HardDrive, Users, Tv } from "lucide-vue";
+import { Home, Film, Search, HardDrive, Users, Tv } from "lucide-vue-next";
 
 import { RouteViewCore } from "@/domains/route_view";
 import { Application } from "@/domains/app";
 import { NavigatorCore } from "@/domains/navigator";
 import KeepAliveView from "@/components/ui/KeepAliveView.vue";
-import {
-  homeHistoryPage,
-  homeIndexPage,
-  homeLayout,
-  homeMoviePage,
-  homeMovieSearchPage,
-  homeTVSearchPage,
-} from "@/store/views";
+import { homeHistoryPage, homeIndexPage, homeLayout, homeTVSearchPage } from "@/store/views";
 
 const { app, view, router } = defineProps<{
   app: Application;
@@ -46,78 +39,27 @@ view.onCurViewChange((nextCurView) => {
 <template>
   <div class="layout flex flex-col w-full h-full">
     <div
-      class="absolute right-[24px] bottom-[24px] z-10 h-[68px] px-4 z-index-10 box-content rounded-lg shadow-md bg-white dark:bg-black-900"
+      class="absolute right-[24px] bottom-[24px] z-10 overflow-hidden px-4 z-index-10 box-content rounded-lg shadow-md"
     >
-      <div class="box-content flex opacity-100">
-        <div
-          class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage(homeIndexPage)"
-        >
+      <div class="absolute z-10 inset-0 blur-bg"></div>
+      <div class="relative z-20 grid grid-cols-4 gap-4">
+        <div class="flex items-center justify-center p-4 cursor-pointer" @click="gotoPage(homeIndexPage)">
+          <Home :size="48" class="w-6 h-6" />
+        </div>
+        <div class="flex items-center justify-center p-4 cursor-pointer" @click="gotoPage(homeTVSearchPage)">
           <div>
-            <Home color="white" :size="32" class="w-5 h-5" />
-          </div>
-          <div
-            :class="{
-              'mt-2 text-sm text-center': true,
-              underline: curView === homeIndexPage,
-            }"
-          >
-            首页
+            <Search :size="48" class="w-6 h-6" />
           </div>
         </div>
-        <div
-          class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage(homeMoviePage)"
-        >
+        <div class="flex items-center justify-center p-4 cursor-pointer" @click="gotoPage(homeHistoryPage)">
           <div>
-            <Home color="white" :size="32" class="w-5 h-5" />
-          </div>
-          <div
-            :class="{
-              'mt-2 text-sm text-center': true,
-              underline: curView === homeMoviePage,
-            }"
-          >
-            电影
+            <HardDrive :size="48" class="w-6 h-6" />
           </div>
         </div>
-        <div
-          class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage(homeTVSearchPage)"
-        >
+        <div class="flex items-center justify-center p-4 cursor-pointer" @click="logout">
           <div>
-            <Search color="white" :size="32" class="w-5 h-5" />
+            <Users :size="48" class="w-6 h-6" />
           </div>
-          <div
-            :class="{
-              'mt-2 text-sm text-center': true,
-              underline: curView === homeMovieSearchPage || curView === homeTVSearchPage,
-            }"
-          >
-            搜索
-          </div>
-        </div>
-        <div
-          class="flex flex-col justify-center items-center p-4 cursor-pointer dark:text-black-200"
-          @click="gotoPage(homeHistoryPage)"
-        >
-          <div>
-            <HardDrive color="white" :size="32" class="w-5 h-5" />
-          </div>
-          <div
-            :class="{
-              'mt-2 text-sm text-center': true,
-              underline: curView === homeHistoryPage,
-            }"
-          >
-            观看记录
-          </div>
-        </div>
-        <div class="flex flex-col justify-center p-4 items-center cursor-pointer dark:text-black-200" @click="logout">
-          <div>
-            <Users color="white" :size="32" class="w-5 h-5" />
-          </div>
-          <div class="mt-2 text-sm text-center">退出登录</div>
         </div>
       </div>
     </div>

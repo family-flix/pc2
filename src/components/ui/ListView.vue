@@ -3,6 +3,7 @@
  * @file 提供 加载中、没有数据、加载更多等内容的组件
  */
 import { defineComponent, ref } from "vue";
+import { Loader2 } from "lucide-vue-next";
 
 import { ListCore } from "@/domains/list";
 import { cn } from "@/utils";
@@ -20,11 +21,7 @@ const { store } = props;
 const response = ref(store.response);
 
 store.onStateChange((nextState) => {
-  console.log(
-    "[COMPONENT]ListView - store.onStateChange",
-    nextState.empty,
-    !nextState.noMore && !nextState.initial
-  );
+  console.log("[COMPONENT]ListView - store.onStateChange", nextState.empty, !nextState.noMore && !nextState.initial);
   response.value = nextState;
 });
 const className = cn("relative", props.class);
@@ -62,9 +59,9 @@ const className = cn("relative", props.class);
     </div>
     <show :when="!response.noMore && !response.initial" name="bottom">
       <div class="mt-4 flex justify-center py-4 text-slate-500">
-        <div class="mt-4 flex items-center space-x-2 cursor-pointer">
+        <div class="mt-4 flex flex-col items-center space-x-2 cursor-pointer">
           <show :when="response.loading">
-            <div>...</div>
+            <Loader2 class="animate animate-spin" :size="32" />
           </show>
           <div class="text-center text-xl">
             {{ response.loading ? "加载中" : "加载更多" }}

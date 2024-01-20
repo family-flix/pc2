@@ -3,10 +3,13 @@ import { PlayerCore } from ".";
 /** 连接 $video 标签和 player 领域 */
 export function connect($video: HTMLVideoElement, player: PlayerCore) {
   $video.onloadstart = () => {
+    // 1
     console.log("[COMPONENT]VideoPlayer/connect - $video.onloadstart");
+    player.handleStartLoad();
   };
   $video.onloadedmetadata = function (event) {
-    // console.log("[COMPONENT]VideoPlayer/connect - $video.onloadedmetadata", this.videoWidth, this.videoHeight, this);
+    // 2
+    console.log("[COMPONENT]VideoPlayer/connect - $video.onloadedmetadata");
     // @ts-ignore
     const width = this.videoWidth;
     // @ts-ignore
@@ -29,23 +32,20 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
   };
   $video.onplay = () => {
     console.log("[COMPONENT]VideoPlayer/connect - $video.onplay");
-    // player.emit(PlayerCore.Events.Play);
+    player.handlePlay();
   };
   $video.onplaying = () => {
     console.log("[COMPONENT]VideoPlayer/connect - $video.onplaying");
+    player.handlePlaying();
   };
   $video.ontimeupdate = (event) => {
+    // console.log("[COMPONENT]VideoPlayer/connect - $video.ontimeupdate");
     const { currentTime, duration } = event.currentTarget as HTMLVideoElement;
-    //     console.log(
-    //       "[COMPONENT]VideoPlayer/connect - $video.ontimeupdate",
-    //       currentTime,
-    //       duration
-    //     );
     player.handleTimeUpdate({ currentTime, duration });
   };
   $video.onpause = (event) => {
+    console.log("[COMPONENT]VideoPlayer/connect - $video.onpause");
     const { currentTime, duration } = event.currentTarget as HTMLVideoElement;
-    // console.log("[COMPONENT]VideoPlayer/connect - $video.onpause", currentTime);
     // player.emit(PlayerCore.Events.Pause, { currentTime, duration });
     player.handlePause({ currentTime, duration });
   };
@@ -55,7 +55,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
   };
   $video.onended = () => {
     console.log("[COMPONENT]VideoPlayer/connect - $video.onended");
-    player.handleEnd();
+    player.handleEnded();
   };
   $video.onvolumechange = (event) => {
     const { volume } = event.currentTarget as HTMLVideoElement;
@@ -72,8 +72,8 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     player.handleResize({ width: videoWidth, height: videoHeight });
   };
   $video.onerror = (event) => {
+    console.log("[COMPONENT]VideoPlayer/connect - $video.onerror");
     const msg = (() => {
-      console.log("[COMPONENT]VideoPlayer/connect - $video.onerror", event);
       if (typeof event === "string") {
         return new Error(event);
       }
@@ -93,6 +93,12 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     })();
     player.handleError(msg.message);
   };
+  $video.addEventListener("webkitstartfullscreen", () => {
+    player.handleFullscreenChange(true);
+  });
+  $video.addEventListener("webkitendfullscreen", () => {
+    player.handleFullscreenChange(false);
+  });
   player.bindAbstractNode({
     $node: $video,
     async play() {
@@ -109,6 +115,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       return !!$video.canPlayType(type);
     },
     load(url: string) {
+      // console.log("[DOMAIN]player/connect - load", url, $video);
       $video.src = url;
       $video.load();
     },
@@ -119,7 +126,16 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       $video.volume = volume;
     },
     setRate(rate: number) {
+      // console.log("[DOMAIN]player/connect - setRate", rate, $video);
       $video.playbackRate = rate;
+    },
+    enableFullscreen() {
+      $video.removeAttribute("webkit-playsinline");
+      $video.removeAttribute("playsinline");
+    },
+    disableFullscreen() {
+      $video.setAttribute("webkit-playsinline", "true");
+      $video.setAttribute("playsinline", "true");
     },
     showSubtitle() {
       if ($video.textTracks[0]) {
@@ -131,6 +147,24 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       if ($video.textTracks[0]) {
         $video.textTracks[0].mode = "hidden";
       }
+    },
+    showAirplay() {
+      // @ts-ignore
+      if ($video.webkitShowPlaybackTargetPicker) {
+        // @ts-ignore
+        $video.webkitShowPlaybackTargetPicker;
+        return;
+      }
+      alert("AirPlay not supported.");
+    },
+    pictureInPicture() {
+      // @ts-ignore
+      if ($video.webkitSetPresentationMode) {
+        // @ts-ignore
+        $video.webkitSetPresentationMode("picture-in-picture");
+        return;
+      }
+      alert("Picture-in-Picture not supported.");
     },
   });
 }

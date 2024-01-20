@@ -36,9 +36,9 @@ store.onStateChange((nextState) => {
 </script>
 
 <template>
-  <block v-if="state.mounted">
+  <template v-if="state.mounted">
     <div :class="className" :style="{ 'z-index': index }" :data-state="state.visible ? 'open' : 'closed'">
       <slot></slot>
     </div>
-  </block>
+  </template>
 </template>

@@ -15,7 +15,7 @@ const props = defineProps<{
 const { store, index } = props;
 
 const state = ref(store.state);
-console.log("[COMPONENT]KeepAliveView", store._name, store.state);
+// console.log("[COMPONENT]KeepAliveView", store._name, store.state);
 
 store.ready();
 onMounted(() => {

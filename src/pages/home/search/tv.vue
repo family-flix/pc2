@@ -4,11 +4,8 @@
  */
 import { defineComponent, ref } from "vue";
 
-import {
-  search_tv_and_movie,
-  SearchResultItem,
-  MediaTypes,
-} from "@/domains/tv/services";
+import { MediaItem, fetchMediaList } from "@/services/media";
+import { MediaTypes } from "@/constants";
 // import { LazyImage } from "@/components/ui/image";
 import { RequestCore } from "@/domains/request";
 import { ListCore } from "@/domains/list";
@@ -20,8 +17,9 @@ import { RouteViewCore } from "@/domains/route_view";
 import { ImageCore } from "@/domains/ui/image";
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
+import { moviePlayingPage, tvPlayingPage, rootView } from "@/store/views";
 
-const helper = new ListCore(new RequestCore(search_tv_and_movie));
+const helper = new ListCore(new RequestCore(fetchMediaList));
 const nameInput = new InputCore({
   placeholder: "请输入关键字搜索",
 });
@@ -45,13 +43,22 @@ const { router, view } = defineProps<{
 }>();
 // const [response, helper] = useHelper<PartialSearchedTV>(fetch_tv_list);
 const response = ref(helper.response);
-function play(tv: SearchResultItem) {
-  const { id, tv_id, type } = tv;
-  if (type === MediaTypes.TV) {
-    router.push(`/tv/play/${tv_id}?season_id=${id}`);
+function play(tv: MediaItem) {
+  const { id, type } = tv;
+  if (type === MediaTypes.Season) {
+    tvPlayingPage.query = {
+      id,
+    };
+    rootView.layerSubView(tvPlayingPage);
     return;
   }
-  router.push(`/movie/play/${id}`);
+  if (type === MediaTypes.Movie) {
+    moviePlayingPage.query = {
+      id,
+    };
+    rootView.layerSubView(moviePlayingPage);
+    return;
+  }
 }
 
 // console.log("home/search initialize");
@@ -93,20 +100,13 @@ helper.onStateChange((nextResponse) => {
     </div>
     <scroll-view class="flex-1" :store="scroll">
       <list-view :store="helper" class="p-4 space-y-4">
-        <div v-for="t in response.dataSource" class="flex" @click="play(t)">
-          <img
-            class="w-[240px] mr-4 object-cover"
-            :src="t.poster_path"
-            :alt="t.name"
-          />
+        <div v-for="media in response.dataSource" class="flex" @click="play(media)">
+          <img class="w-[240px] mr-4 object-cover" :src="media.poster_path" :alt="media.name" />
           <div class="flex-1 overflow-hidden text-ellipsis">
-            <h2 class="truncate text-2xl">{{ t.name }}</h2>
-            <p class="mt-2">{{ t.season_number }}</p>
+            <h2 class="truncate text-2xl">{{ media.name }}</h2>
             <div class="mt-4">
-              <p
-                class="text-lg break-all whitespace-pre-wrap truncate line-clamp-6"
-              >
-                {{ t.overview }}
+              <p class="text-lg break-all whitespace-pre-wrap truncate line-clamp-6">
+                {{ media.overview }}
               </p>
             </div>
           </div>

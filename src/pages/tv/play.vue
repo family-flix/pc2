@@ -8,7 +8,7 @@ import { TVCore } from "@/domains/tv";
 import { EpisodeResolutionTypes } from "@/domains/tv/constants";
 import { createVVTSubtitle } from "@/domains/subtitle/utils";
 import { RequestCore } from "@/domains/request";
-import { SubtitleResp } from "@/domains/subtitle/types";
+import { SubtitleFileResp } from "@/domains/subtitle/types";
 import { RefCore } from "@/domains/cur";
 import { rootView } from "@/store/views";
 import { ViewComponentProps } from "@/types";
@@ -78,7 +78,7 @@ function changeResolution(type: EpisodeResolutionTypes) {
 function changeRate(rate: number) {
   player.changeRate(rate);
 }
-function loadSubtitle(subtitle: SubtitleResp) {
+function loadSubtitle(subtitle: SubtitleFileResp) {
   tv.loadSubtitleFile(subtitle, tv.currentTime);
 }
 function toggleSubtitleVisible() {
@@ -347,12 +347,12 @@ tv.fetchProfile(view.params.id, {
           <div class="flex justify-between">
             <div>字幕</div>
             <div @click="toggleSubtitleVisible">
-              <block v-if="subtitleState.visible">
+              <template v-if="subtitleState.visible">
                 <Eye :size="24" />
-              </block>
-              <block v-else>
+              </template>
+              <template v-else>
                 <EyeOff :size="24" />
-              </block>
+              </template>
             </div>
           </div>
           <div className="">

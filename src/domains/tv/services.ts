@@ -3,11 +3,11 @@ import dayjs from "dayjs";
 import { FetchParams } from "@/domains/list/typing";
 import { SubtitleResp } from "@/domains/subtitle/types";
 import { ListResponse, RequestedResource, Result, Unpacked, UnpackedResult } from "@/types";
+import { MediaOriginCountry, SeasonGenresTexts, SeasonMediaOriginCountryTexts } from "@/constants";
 import { request } from "@/utils/request";
 import { episode_to_chinese_num, minute_to_hour, relative_time_from_now, season_to_chinese_num } from "@/utils";
 
 import { EpisodeResolutionTypes, EpisodeResolutionTypeTexts } from "./constants";
-import { MediaSource, TVGenresTexts, TVSourceTexts } from "@/constants";
 
 /**
  * 获取电视剧列表
@@ -117,13 +117,13 @@ export async function fetchSeasonList(params: FetchParams & { name: string }) {
         genres: origin_country
           .split("|")
           .map((country) => {
-            return TVSourceTexts[country as MediaSource] ?? "unknown";
+            return SeasonMediaOriginCountryTexts[country as MediaOriginCountry] ?? "unknown";
           })
           .concat(
             genres
               .split("|")
               .map((g) => {
-                return TVGenresTexts[g];
+                return SeasonGenresTexts[g];
               })
               .filter(Boolean)
           ),

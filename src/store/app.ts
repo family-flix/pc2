@@ -74,7 +74,7 @@ ListCore.commonProcessor = <T>(
   }
   try {
     const data = originalResponse.data || originalResponse;
-    const { list, page, page_size, total, no_more } = data;
+    const { list, page, page_size, total, noMore, no_more, next_marker } = data;
     const result = {
       dataSource: list,
       page,
@@ -83,15 +83,19 @@ ListCore.commonProcessor = <T>(
       empty: false,
       noMore: false,
       error: null,
+      next_marker,
     };
     if (total <= page_size * page) {
       result.noMore = true;
     }
-    if (list.length < page_size) {
-      result.noMore = true;
-    }
     if (no_more !== undefined) {
       result.noMore = no_more;
+    }
+    if (noMore !== undefined) {
+      result.noMore = noMore;
+    }
+    if (next_marker === null) {
+      result.noMore = true;
     }
     if (list.length === 0 && page === 1) {
       result.empty = true;
@@ -106,6 +110,7 @@ ListCore.commonProcessor = <T>(
       noMore: false,
       empty: false,
       error: new Error(`${(error as Error).message}`),
+      // next_marker: "",
     };
   }
 };

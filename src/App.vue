@@ -58,8 +58,8 @@ onMounted(() => {
 
 const className = cn(
   "absolute inset-0 bg-white opacity-100 dark:bg-black overflow-y-auto",
-  "animate-in slide-in-from-right",
-  "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right"
+  "animate-in fade-in",
+  "data-[state=closed]:animate-out data-[state=closed]:fade-out"
 );
 </script>
 

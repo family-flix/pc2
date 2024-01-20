@@ -31,45 +31,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative w-full h-screen">
-    <div class="absolute z-20 top-0 left-0">
-      <div class="bar flex items-center justify-between py-4 px-4">
-        <div class="bar__main flex items-center">
-          <div></div>
-        </div>
-        <div class="bar__sub flex items-center"></div>
-      </div>
-    </div>
-    <video
-      ref="videoRef"
-      class="absolute top-[50%] translate-y-[-50%] z-10 w-full"
-      :poster="state.poster"
-      :height="state.height"
-      :controls="true"
-      :webkit-playsinline="true"
-      :playsInline="true"
-      preload="none"
-    ></video>
-    <!-- <div class="absolute z-20 bottom-0 left-0">
-      <div class="bar flex items-center justify-between py-4 px-4">
-        <div class="bar__main flex items-center space-x-4">
-          <template v-if="state.playing">
-            <div>
-              <div class="p-4 cursor-pointer text-white" @click="pause"><Pause :size="32" /></div>
-            </div>
-          </template>
-          <template v-else>
-            <div>
-              <div class="p-4 cursor-pointer text-white" @click="play">
-                <Play :size="32" />
-              </div>
-            </div>
-          </template>
-        </div>
-        <div class="bar__sub flex items-center"></div>
-      </div>
-    </div> -->
-  </div>
+  <video
+    ref="videoRef"
+    class="w-full"
+    :poster="state.poster"
+    :height="state.height"
+    :controls="false"
+    preload="none"
+  ></video>
 </template>
 
 <style scoped></style>
