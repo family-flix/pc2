@@ -1,3 +1,4 @@
+export const __VERSION__ = "2.1.0";
 /**
  * @doc https://www.iso.org/standard/63545.html
  */
