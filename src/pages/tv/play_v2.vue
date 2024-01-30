@@ -80,9 +80,9 @@ class SeasonPlayingPageLogic {
       player.setCurrentTime(curEpisode.currentTime);
       // bottomOperation.show();
     });
-    tv.$source.onSubtitleLoaded((subtitle) => {
-      player.setSubtitle(createVVTSubtitle(subtitle));
-    });
+    // tv.$source.onSubtitleLoaded((subtitle) => {
+    // player.setSubtitle(createVVTSubtitle(subtitle));
+    // });
     tv.onEpisodeChange((curEpisode) => {
       app.setTitle(tv.getTitle().join(" - "));
       const { currentTime } = curEpisode;
@@ -346,6 +346,7 @@ $logic.$tv.onSourceFileChange((v) => {
 });
 $logic.$tv.$source.onSubtitleChange((v) => {
   subtitleState.value = v;
+  $page.$subtitle.show();
 });
 // $logic.$player.onRateChange(({ rate }) => {
 //   setRate(rate);
@@ -432,12 +433,15 @@ $logic.$tv.fetchProfile(view.query.id);
           <template v-if="subtitleState === null"> </template>
           <template v-else-if="!subtitleState.visible"></template>
           <template v-else>
-            <div class="mb-8 space-y-1">
-              <template v-for="text in subtitleState.texts">
-                <div class="text-center text-lg">
-                  {{ text }}
-                </div>
-              </template>
+            <div class="relative mb-4 space-y-1 p-2">
+              <div class="absolute z-10 bg-black opacity-50"></div>
+              <div class="relative z-20">
+                <template v-for="text in subtitleState.texts">
+                  <div class="text-center text-white text-2xl dark:text-white">
+                    {{ text }}
+                  </div>
+                </template>
+              </div>
             </div>
           </template>
         </Presence>
@@ -452,20 +456,18 @@ $logic.$tv.fetchProfile(view.query.id);
             </div>
             <div class="flex items-center justify-between mt-6 w-full px-4">
               <div class="flex items-center space-x-4">
-                <template v-if="!!playerState.ready">
-                  <div>
-                    <template v-if="playerState.playing">
-                      <div class="cursor-pointer" @click="$logic.$player.pause">
-                        <Pause class="w-8 h-8" />
-                      </div>
-                    </template>
-                    <template v-else>
-                      <div class="cursor-pointer" @click="$logic.$player.play">
-                        <Play class="w-8 h-8" />
-                      </div>
-                    </template>
-                  </div>
-                </template>
+                <div>
+                  <template v-if="playerState.playing">
+                    <div class="cursor-pointer" @click="$logic.$player.pause">
+                      <Pause class="w-8 h-8" />
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="cursor-pointer" @click="$logic.$player.play">
+                      <Play class="w-8 h-8" />
+                    </div>
+                  </template>
+                </div>
                 <div class="relative p-2 rounded-md space-x-2 cursor-pointer">
                   <SkipForward class="w-8 h-8" />
                 </div>
@@ -484,9 +486,6 @@ $logic.$tv.fetchProfile(view.query.id);
                 <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$rate.show">
                   <div>{{ playerState?.rate }}x</div>
                 </div>
-                <!-- <div class="relative p-2 rounded-md">
-                  <Settings class="w-8 h-8" />
-                </div> -->
                 <div class="relative p-2 rounded-md cursor-pointer" @click="toggleFullScreen">
                   <template v-if="!isFull">
                     <Maximize class="w-8 h-8" />
@@ -574,8 +573,8 @@ $logic.$tv.fetchProfile(view.query.id);
               :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeSourceFile(file)"
             >
-              <div class="">{{ file.file_name }}</div>
-              <template v-if="profile.curSource?.curSourceFileId === file.id"><CheckCheck :size="32" /></template>
+              <div class="">{{ file.name }}</div>
+              <template v-if="profile.curSource?.curFileId === file.id"><CheckCheck :size="32" /></template>
             </div>
           </template>
         </div>

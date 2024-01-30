@@ -70,6 +70,7 @@ export class MediaSourceFileCore extends BaseDomain<TheTypesOfEvents> {
     super();
 
     const { resolution = MediaResolutionTypes.SD } = props;
+    //     this.id = id;
     this.curResolution = resolution;
   }
 
@@ -137,12 +138,12 @@ export class MediaSourceFileCore extends BaseDomain<TheTypesOfEvents> {
     return Result.Ok(this.profile);
   }
   async loadSubtitle(options: { extraSubtitleFiles: SubtitleFileResp[]; currentTime: number }) {
-    console.log("[DOMAIN]source/index - loadSubtitle");
     const { extraSubtitleFiles, currentTime } = options;
+    // console.log("[DOMAIN]source/index - loadSubtitle", extraSubtitleFiles);
     if (!this.profile) {
       return Result.Err("请先调用 load 获取视频文件");
     }
-    const subtitles = this.profile.subtitles.concat(extraSubtitleFiles).filter(Boolean);
+    const subtitles = extraSubtitleFiles.concat(this.profile.subtitles).filter(Boolean);
     this.subtitles = subtitles;
     console.log("[DOMAIN]tv/index - loadSubtitle2 ", subtitles);
     const subtitleFile = (() => {
@@ -185,6 +186,7 @@ export class MediaSourceFileCore extends BaseDomain<TheTypesOfEvents> {
     };
     this.subtitle = subtitle;
     console.log("[DOMAIN]movie/index - before emit Events.SubtitleChange", this.subtitle);
+    this.emit(Events.SubtitleLoaded, this.$subtitle);
     this.emit(Events.SubtitleChange, { ...subtitle });
     this.$subtitle.onStateChange((nextState) => {
       const { curLine } = nextState;

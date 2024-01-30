@@ -522,8 +522,8 @@ $logic.$tv.fetchProfile(view.query.id);
               :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeSourceFile(file)"
             >
-              <div class="">{{ file.file_name }}</div>
-              <template v-if="profile.curSource?.curSourceFileId === file.id"><CheckCheck :size="32" /></template>
+              <div class="">{{ file.name }}</div>
+              <template v-if="profile.curSource?.curFileId === file.id"><CheckCheck :size="32" /></template>
             </div>
           </template>
         </div>

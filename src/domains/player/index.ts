@@ -210,6 +210,9 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     if (this.playing) {
       return;
     }
+    if (!this._canPlay) {
+      return;
+    }
     this._abstractNode.play();
     this.hasPlayed = true;
     this._abstractNode.setRate(this._curRate);

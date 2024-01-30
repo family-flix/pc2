@@ -988,7 +988,13 @@ export function episode_to_num_text(str: string) {
   const num = parseInt(matches[0], 10);
   return String(num);
 }
-export function episode_to_chinese_num(str: string) {
+export function episode_to_chinese_num(str: string | number) {
+  if (typeof str === "number") {
+    return `第${str}集`;
+  }
+  if (str.match(/^[0-9]/)) {
+    return str;
+  }
   const regex = /(\d+)/g;
   let s = str.replace(/[eE]/g, "");
   const matches = s.match(regex);
