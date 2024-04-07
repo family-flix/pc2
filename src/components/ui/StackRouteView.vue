@@ -17,7 +17,7 @@ const { store, className, index } = defineProps<{
 const state = ref(store.state);
 store.ready();
 onMounted(() => {
-  if (store.isMounted) {
+  if (store.mounted) {
     return;
   }
   // console.log("[COMPONENT]stack-route-view - useEffect");

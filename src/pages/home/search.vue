@@ -29,6 +29,7 @@ const helper = new ListCoreV2(
   })
 );
 const nameInput = new InputCore({
+  defaultValue: "",
   placeholder: "请输入关键字搜索",
 });
 const searchBtn = new ButtonCore({
