@@ -2,32 +2,24 @@
 /**
  * @file 不销毁的路由视图
  */
-import { ref, onMounted, toRefs } from "vue";
+import { ref, computed, onMounted, toRefs, onUnmounted } from "vue";
 
 import { RouteViewCore } from "@/domains/route_view";
 import { cn } from "@/utils";
 
-const props = defineProps<{
-  class?: string;
+const { store, immediately, index, className } = defineProps<{
+  className?: string;
   store: RouteViewCore;
   index: number;
+  immediately?: boolean;
 }>();
-const { store, index } = props;
 
 const state = ref(store.state);
 // console.log("[COMPONENT]KeepAliveView", store._name, store.state);
 
 store.ready();
-onMounted(() => {
-  if (store.isMounted) {
-    return;
-  }
-  //   console.log("[COMPONENT]keep-alice-route-view - useEffect");
-  store.setMounted();
-  store.showed();
-  return () => {
-    store.setUnmounted();
-  };
+onUnmounted(() => {
+  store.setUnload();
 });
 
 store.onStateChange((nextState) => {
@@ -35,19 +27,27 @@ store.onStateChange((nextState) => {
   state.value = nextState;
 });
 
-// const { mounted, visible } = toRefs(state);
-const className = props.class;
+const styles = computed(() => {
+  return {
+    display: (() => {
+      if (immediately) {
+        if (state.value.visible) {
+          return "block";
+        }
+        return "none";
+      }
+      if (!state.value.mounted) {
+        return "none";
+      }
+      return state.value.visible ? "block" : "none";
+    })(),
+    "z-index": index,
+  };
+});
 </script>
 
 <template>
-  <div
-    :class="className"
-    :style="{
-      display: state.mounted ? 'block' : 'none',
-      'z-index': index,
-    }"
-    :data-state="state.visible ? 'open' : 'closed'"
-  >
+  <div :class="className" :style="styles" :data-state="state.visible ? 'open' : 'closed'">
     <slot></slot>
   </div>
 </template>

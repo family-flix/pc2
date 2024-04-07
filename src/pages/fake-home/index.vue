@@ -2,15 +2,15 @@
 import { ArrowLeft } from "lucide-vue-next";
 
 import { ViewComponentProps } from "@/types";
-import { rootView, test1Page } from "@/store/views";
+// import { rootView, test1Page } from "@/store/views";
 
 const { app, view } = defineProps<ViewComponentProps>();
 
 function back() {
-  rootView.uncoverPrevView();
+  // rootView.uncoverPrevView();
 }
 function gotoTestPage() {
-  rootView.layerSubView(test1Page);
+  // rootView.layerSubView(test1Page);
 }
 </script>
 

@@ -8,7 +8,7 @@ import { CollectionCore } from "@/domains/ui/collection";
 import { DismissableLayerCore } from "@/domains/ui/dismissable-layer";
 import { Direction } from "@/domains/ui/direction";
 import { Rect } from "@/types";
-import { app } from "@/store/app";
+// import { app } from "@/store/app";
 
 import { SelectContentCore } from "./content";
 import { SelectViewportCore } from "./viewport";

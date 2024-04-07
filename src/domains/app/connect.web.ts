@@ -1,7 +1,6 @@
 import { Application, MEDIA } from "@/domains/app";
 
 export function connect(app: Application) {
-  const { router } = app;
   const ownerDocument = globalThis.document;
   app.getComputedStyle = (el: HTMLElement) => {
     return window.getComputedStyle(el);
@@ -22,13 +21,11 @@ export function connect(app: Application) {
     const { innerWidth, innerHeight } = window;
     app.setSize({ width: innerWidth, height: innerHeight });
   });
+  window.addEventListener("orientationchange", function () {
+    app.handleScreenOrientationChange(window.orientation);
+  });
   window.addEventListener("load", () => {
     // console.log("2");
-  });
-  window.addEventListener("popstate", (event) => {
-    const { type } = event;
-    const { pathname } = window.location;
-    app.emit(app.Events.PopState, { type, pathname });
   });
   window.addEventListener("beforeunload", (event) => {
     // // 取消事件
@@ -46,9 +43,8 @@ export function connect(app: Application) {
       width: innerWidth,
       height: innerHeight,
     };
-    // console.log("resize", size);
-    // app.emit(app.Events.Resize, { width: innerWidth, height: innerHeight });
-    app.resize(size);
+    // 旋转屏幕/进入全屏会触发这里（安卓）
+    // app.handleResize(size);
   });
   window.addEventListener("blur", () => {
     app.emit(app.Events.Blur);
@@ -60,11 +56,21 @@ export function connect(app: Application) {
     }
     app.emit(app.Events.Show);
   });
-  const ua = navigator.userAgent.toLowerCase();
+  /**
+   * 环境变量 ------------
+   */
+  const userAgent = navigator.userAgent;
+  const ua = userAgent.toLowerCase();
+  const ios = /iPad|iPhone|iPod/.test(userAgent);
+  const android = /Android/.test(userAgent);
   app.setEnv({
     wechat: ua.indexOf("micromessenger") !== -1,
+    ios,
+    android,
   });
-
+  /**
+   * 主题 ——-------------
+   */
   const media = window.matchMedia(MEDIA);
   let curTheme = "light";
   const getSystemTheme = (e?: MediaQueryList | MediaQueryListEvent) => {
@@ -124,66 +130,6 @@ export function connect(app: Application) {
   ownerDocument.addEventListener("keydown", (event) => {
     const { key } = event;
     app.keydown({ key });
-  });
-  ownerDocument.addEventListener("click", (event) => {
-    let target = event.target;
-    if (target instanceof Document) {
-      return;
-    }
-    if (target === null) {
-      return;
-    }
-    let matched = false;
-    while (target) {
-      const t = target as HTMLElement;
-      if (t.tagName === "A") {
-        matched = true;
-        break;
-      }
-      target = t.parentNode;
-    }
-    if (!matched) {
-      return;
-    }
-    const t = target as HTMLElement;
-    const href = t.getAttribute("href");
-    if (!href) {
-      return;
-    }
-    if (!href.startsWith("/")) {
-      return;
-    }
-    if (href.startsWith("http")) {
-      return;
-    }
-    event.preventDefault();
-    app.emit(app.Events.ClickLink, { href });
-  });
-  router.back = () => {
-    window.history.back();
-  };
-  router.reload = () => {
-    window.location.reload();
-  };
-  router.onPushState(({ from, path }) => {
-    // router.log("[Application ]- onPushState", path);
-    window.history.pushState(
-      {
-        from,
-      },
-      "",
-      path
-    );
-  });
-  router.onReplaceState(({ from, path, pathname }) => {
-    // router.log("[Application ]- onReplaceState");
-    window.history.replaceState(
-      {
-        from,
-      },
-      "",
-      path
-    );
   });
 
   const originalBodyPointerEvents = ownerDocument.body.style.pointerEvents;

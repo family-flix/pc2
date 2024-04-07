@@ -33,7 +33,7 @@ type MenuState = {
   open: boolean;
   items: MenuItemCore[];
 };
-type MenuProps = {
+export type MenuProps = {
   side: Side;
   align: Align;
   strategy: "fixed" | "absolute";
@@ -83,8 +83,16 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
       this.emit(Events.LeaveMenu);
     });
     this.layer.onDismiss(() => {
-      // console.log("[]MenuCore - this.layer.onDismiss", this.items);
+      console.log("[]MenuCore - this.layer.onDismiss");
       this.hide();
+    });
+    this.presence.onShow(() => {
+      // 弹窗出现，获取弹窗内容的宽高，再计算弹窗的未知
+      // 怎么才能确保 presence 渲染了？
+      setTimeout(() => {
+        this.popper.place();
+        this.emit(Events.Show);
+      }, 200);
     });
     this.presence.onHidden(() => {
       // console.log("this.presence.onHidden", this.items.length);
@@ -108,6 +116,7 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
 
   toggle() {
     const { open } = this.state;
+    console.log("[DOMAIN/ui]menu/index - toggle", open);
     // this.log("toggle", open);
     if (open) {
       this.hide();
@@ -117,12 +126,10 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
   }
   show() {
     this.presence.show();
-    this.popper.place();
-    this.emit(Events.Show);
     // this.emit(Events.StateChange, { ...this.state });
   }
   hide() {
-    console.log(...this.log("hide"));
+    // console.log(...this.log("hide"));
     this.presence.hide();
     this.emit(Events.Hidden);
     this.emit(Events.StateChange, { ...this.state });
@@ -200,13 +207,7 @@ export class MenuCore extends BaseDomain<TheTypesOfEvents> {
     if (this.maybeHideSub === false) {
       return;
     }
-    console.log(
-      ...this.log(
-        "leaveMenu check need hide subMenu",
-        this.curSub,
-        this.inSubMenu
-      )
-    );
+    console.log(...this.log("leaveMenu check need hide subMenu", this.curSub, this.inSubMenu));
     // this.emit(Events.LeaveMenu);
     // 直接从有 SubMenu 的 MenuItem 离开，不到其他 MenuItem 场景下，也要关闭 SubMenu
     if (this.curSub && !this.inSubMenu) {

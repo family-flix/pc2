@@ -36,13 +36,16 @@ body {
 
 .huizhang {
   position: relative;
-  border-radius: 10px 10px 10px 0px;
+  border-radius: 4px;
   color: #fff;
-  padding: 2px 4px;
-  font-size: 10px;
+  padding: 4px 8px;
+  font-size: 12px;
   line-height: 12px;
   background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) var(--weui-BRAND);
   background-blend-mode: soft-light;
+}
+.huizhang--blue {
+  background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) #2ca0f7;
 }
 /* .huizhang::before {
   content: "";

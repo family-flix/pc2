@@ -63,8 +63,10 @@ export class PopoverCore extends BaseDomain<TheTypesOfEvents> {
   show() {
     this.state.visible = true;
     this.present.show();
-    this.popper.place();
-    this.emit(Events.Show);
+    setTimeout(() => {
+      this.popper.place();
+      this.emit(Events.Show);
+    }, 200);
   }
   hide() {
     this.state.visible = false;

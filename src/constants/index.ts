@@ -1,4 +1,4 @@
-export const __VERSION__ = "2.2.0";
+export const __VERSION__ = "2.2.1";
 /**
  * @doc https://www.iso.org/standard/63545.html
  */
@@ -262,3 +262,5 @@ export enum CollectionTypes {
   /** 每日更新草稿 */
   DailyUpdateDraft = 3,
 }
+
+export const RecentlyYearOptions = [{ label: "2024" }, { label: "2023" }, { label: "2022" }, { label: "2021" }];

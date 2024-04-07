@@ -1,18 +1,18 @@
 /**
  * @file 电影
  */
-import { Handler } from "mitt";
-
-import { BaseDomain } from "@/domains/base";
+import { Handler, BaseDomain } from "@/domains/base";
 import { MediaResolutionTypes } from "@/domains/source/constants";
 import { MediaSourceFileCore } from "@/domains/source";
+import { HttpClientCore } from "@/domains/http_client";
+import { RequestCoreV2 } from "@/domains/request/v2";
 import { MediaTypes } from "@/constants";
 import { Result } from "@/types";
 
 import {
   CurMediaSource,
   fetchMediaPlayingEpisode,
-  MediaAndCurSource,
+  fetchMediaPlayingEpisodeProcess,
   MediaSource,
   MediaSourceFile,
   updatePlayHistory,
@@ -41,9 +41,10 @@ type MediaProfile = {
 type MovieCoreState = {
   profile: null | MediaProfile;
   curSource: null | CurMediaSource;
+  fixTime: number;
 };
 type MovieCoreProps = {
-  profile: MediaAndCurSource;
+  client: HttpClientCore;
   resolution?: MediaResolutionTypes;
 };
 
@@ -53,6 +54,8 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
   curSource: CurMediaSource | null = null;
   /** 当前影片播放进度 */
   currentTime = 0;
+  /** 手动调整播放进度差值，用于校准字幕 */
+  currentFixTime = 0;
   curResolutionType: MediaResolutionTypes = MediaResolutionTypes.SD;
   /** 正在请求中（获取详情、视频源信息等） */
   _pending = false;
@@ -60,19 +63,23 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
   canAutoPlay = false;
 
   $source: MediaSourceFileCore;
+  $client: HttpClientCore;
 
   get state(): MovieCoreState {
     return {
       profile: this.profile,
       curSource: this.curSource,
+      fixTime: this.currentFixTime,
     };
   }
 
-  constructor(props: Partial<{ name: string } & MovieCoreProps> = {}) {
+  constructor(props: Partial<{ name: string }> & MovieCoreProps) {
     super();
 
-    const { resolution = MediaResolutionTypes.SD } = props;
+    const { client, resolution = MediaResolutionTypes.SD } = props;
+    this.$client = client;
     this.$source = new MediaSourceFileCore({
+      client,
       resolution,
     });
   }
@@ -82,7 +89,12 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       const msg = this.tip({ text: ["缺少电影 id 参数"] });
       return Result.Err(msg);
     }
-    const res = await fetchMediaPlayingEpisode({ media_id, type: MediaTypes.Movie });
+    const fetch = new RequestCoreV2({
+      fetch: fetchMediaPlayingEpisode,
+      process: fetchMediaPlayingEpisodeProcess,
+      client: this.$client,
+    });
+    const res = await fetch.run({ media_id, type: MediaTypes.Movie });
     if (res.error) {
       const msg = this.tip({ text: ["获取电视剧详情失败", res.error.message] });
       return Result.Err(msg);
@@ -149,12 +161,16 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
     return Result.Ok(res.data);
   }
   async changeSourceFile(sourceFile: { id: string }) {
-    const { id } = sourceFile;
     if (this.profile === null) {
       const msg = this.tip({ text: ["视频还未加载完成"] });
       return Result.Err(msg);
     }
+    if (this.curSource === null) {
+      const msg = this.tip({ text: ["视频还未加载完成"] });
+      return Result.Err(msg);
+    }
     const res = await this.$source.load({ id: sourceFile.id });
+    this.curSource.curFileId = sourceFile.id;
     if (res.error) {
       this.tip({
         text: [res.error.message],
@@ -205,13 +221,31 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
     if (this.$source.profile === null) {
       return;
     }
-    updatePlayHistory({
+    const request = new RequestCoreV2({
+      fetch: updatePlayHistory,
+      client: this.$client,
+    });
+    request.run({
       media_id: this.profile.id,
       media_source_id: this.curSource.id,
       current_time: parseFloat(currentTime.toFixed(2)),
       duration: parseFloat(duration.toFixed(2)),
       source_id: this.$source.profile.id,
     });
+  }
+  minFixTime(step: number = 1) {
+    this.currentFixTime -= step;
+    if (this.$source.subtitle?.visible) {
+      this.$source.$subtitle?.handleTimeChange(this.currentTime + this.currentFixTime);
+    }
+    this.emit(Events.StateChange, { ...this.state });
+  }
+  addFixTime(step: number = 1) {
+    this.currentFixTime += step;
+    if (this.$source.subtitle?.visible) {
+      this.$source.$subtitle?.handleTimeChange(this.currentTime + this.currentFixTime);
+    }
+    this.emit(Events.StateChange, { ...this.state });
   }
   /** 更新观看进度 */
   updatePlayProgress = throttle_1(10 * 1000, (values: Partial<{ currentTime: number; duration: number }> = {}) => {
@@ -222,7 +256,7 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
     const { currentTime = 0 } = values;
     this.currentTime = currentTime;
     if (this.$source.subtitle?.visible) {
-      this.$source.$subtitle?.handleTimeChange(currentTime);
+      this.$source.$subtitle?.handleTimeChange(currentTime + this.currentFixTime);
     }
     this.updatePlayProgress(values);
   };

@@ -1,11 +1,12 @@
 /**
  * @file 电视剧
  */
-import { debounce } from "lodash/fp";
-
 import { BaseDomain, Handler } from "@/domains/base";
 import { MediaSourceFileCore } from "@/domains/source";
+import { RequestCoreV2 } from "@/domains/request/v2";
 import { MediaResolutionTypes } from "@/domains/source/constants";
+import { HttpClientCore } from "@/domains/http_client";
+import { debounce } from "@/utils/lodash/debounce";
 import { MediaTypes } from "@/constants";
 import { Result } from "@/types";
 
@@ -18,6 +19,8 @@ import {
   fetchSourceInGroup,
   CurMediaSource,
   fetchMediaSeries,
+  fetchMediaPlayingEpisodeProcess,
+  fetchSourceInGroupProcess,
 } from "./services";
 
 enum Events {
@@ -37,10 +40,10 @@ enum Events {
 type TheTypesOfEvents = {
   [Events.ProfileLoaded]: {
     profile: NonNullable<SeasonCoreState["profile"]>;
-    curSource: NonNullable<SeasonCoreState["curSource"]>;
+    curSource: NonNullable<MediaSource> & { currentTime: number };
   };
   [Events.SourceFileChange]: MediaSourceFile & { currentTime: number };
-  [Events.EpisodeChange]: SeasonCoreProps["curSource"] & {
+  [Events.EpisodeChange]: MediaSource & {
     currentTime: number;
   };
   [Events.EpisodesChange]: MediaSource[];
@@ -62,12 +65,8 @@ type SeasonCoreState = {
   playing: boolean;
 };
 type SeasonCoreProps = {
-  id: string;
-  name: string;
-  overview: string;
-  curSource: MediaSource;
-  episodeGroups: SeasonEpisodeGroup[];
   resolution?: MediaResolutionTypes;
+  client: HttpClientCore;
 };
 
 export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
@@ -90,6 +89,7 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
   private _pending = false;
 
   $source: MediaSourceFileCore;
+  $client: HttpClientCore;
 
   get state(): SeasonCoreState {
     return {
@@ -101,13 +101,15 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
     };
   }
 
-  constructor(props: Partial<{ name: string } & SeasonCoreProps> = {}) {
+  constructor(props: Partial<{ name: string }> & SeasonCoreProps) {
     super();
 
-    const { resolution = MediaResolutionTypes.SD } = props;
+    const { client, resolution = MediaResolutionTypes.SD } = props;
     this.curResolutionType = resolution;
+    this.$client = client;
     this.$source = new MediaSourceFileCore({
       resolution,
+      client,
     });
   }
 
@@ -116,7 +118,12 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
       const msg = this.tip({ text: ["缺少季 id 参数"] });
       return Result.Err(msg);
     }
-    const res = await fetchMediaPlayingEpisode({ media_id: season_id, type: MediaTypes.Season });
+    const fetch = new RequestCoreV2({
+      fetch: fetchMediaPlayingEpisode,
+      process: fetchMediaPlayingEpisodeProcess,
+      client: this.$client,
+    });
+    const res = await fetch.run({ media_id: season_id, type: MediaTypes.Season });
     if (res.error) {
       const msg = this.tip({ text: ["获取电视剧详情失败", res.error.message] });
       return Result.Err(msg);
@@ -150,7 +157,7 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
   /** 播放该电视剧下指定影片 */
   async playEpisode(episode: MediaSource, extra: { currentTime: number }) {
     const { currentTime = 0 } = extra;
-    console.log("[DOMAIN]tv/index - playEpisode", episode, this.curSource);
+    console.log("[DOMAIN]media/season - playEpisode", episode, this.curSource);
     const { id, files } = episode;
     if (this.curSource && id === this.curSource.id) {
       this.tip({
@@ -216,10 +223,15 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
     }
     const isLastEpisode = curSourceIndex === curGroup.list.length - 1;
     if (!isLastEpisode) {
-      const nextEpisode = curGroup.list[curSourceIndex + 1];
+      let nextEpisode = curGroup.list[curSourceIndex + 1];
+      if (!nextEpisode.id) {
+        nextEpisode = curGroup.list[curSourceIndex + 2];
+      }
+      if (nextEpisode) {
+        return Result.Ok(nextEpisode);
+      }
       // curEpisode.cur = false;
       // nextEpisode.cur = true;
-      return Result.Ok(nextEpisode);
     }
     if (curGroupIndex === this.sourceGroups.length - 1) {
       return Result.Err("已经是最后一集了");
@@ -228,7 +240,12 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
     if (!nextGroup) {
       return Result.Err("已经是最后一集了2");
     }
-    const r = await fetchSourceInGroup({ media_id: nextGroup.media_id, start: nextGroup.start, end: nextGroup.end });
+    const fetch = new RequestCoreV2({
+      fetch: fetchSourceInGroup,
+      process: fetchSourceInGroupProcess,
+      client: this.$client,
+    });
+    const r = await fetch.run({ media_id: nextGroup.media_id, start: nextGroup.start, end: nextGroup.end });
     if (r.error) {
       return Result.Err(r.error);
     }
@@ -243,6 +260,8 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
     // nextEpisode.cur = true;
     return Result.Ok(nextEpisode);
   }
+  /** 为播放下一集进行准备 */
+  prepareNextEpisode() {}
   /** 播放下一集 */
   async playNextEpisode() {
     if (this._pending) {
@@ -278,7 +297,12 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
       });
       return Result.Err(msg);
     }
-    const r = await fetchSourceInGroup({ media_id: this.profile.id, start: matchedGroup.start, end: matchedGroup.end });
+    const fetch = new RequestCoreV2({
+      fetch: fetchSourceInGroup,
+      process: fetchSourceInGroupProcess,
+      client: this.$client,
+    });
+    const r = await fetch.run({ media_id: this.profile.id, start: matchedGroup.start, end: matchedGroup.end });
     if (r.error) {
       return Result.Err(r.error);
     }
@@ -311,7 +335,6 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
       });
       return Result.Err(res.error);
     }
-    // this.loadSubtitle({ currentTime: this.currentTime });
     this.emit(Events.SourceFileChange, { ...res.data, currentTime: this.currentTime });
     return Result.Ok(null);
   }
@@ -358,7 +381,13 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
   }
   updatePlayProgressForce(values: Partial<{ currentTime: number; duration: number }> = {}) {
     const { currentTime = this.currentTime, duration = 0 } = values;
-    // console.log("[DOMAIN]TVPlay - update_play_progress", currentTime, this.profile, this.curEpisode);
+    console.log(
+      "[DOMAIN]media/season - update_play_progress",
+      currentTime,
+      this.profile,
+      this.curSource,
+      this.$source.profile
+    );
     if (this.profile === null) {
       return;
     }
@@ -368,7 +397,11 @@ export class SeasonMediaCore extends BaseDomain<TheTypesOfEvents> {
     if (this.$source.profile === null) {
       return;
     }
-    updatePlayHistory({
+    const request = new RequestCoreV2({
+      fetch: updatePlayHistory,
+      client: this.$client,
+    });
+    request.run({
       media_id: this.profile.id,
       media_source_id: this.curSource.id,
       current_time: parseFloat(currentTime.toFixed(2)),

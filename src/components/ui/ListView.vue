@@ -3,19 +3,20 @@
  * @file 提供 加载中、没有数据、加载更多等内容的组件
  */
 import { defineComponent, ref } from "vue";
-import { Loader2 } from "lucide-vue-next";
+import { Loader2, Bird } from "lucide-vue-next";
 
 import { ListCore } from "@/domains/list";
 import { cn } from "@/utils";
 
 import Show from "./Show.vue";
+import { ListCoreV2 } from "@/domains/list/v2";
 
 defineComponent({
   show: Show,
 });
 const props = defineProps<{
   class?: string;
-  store: ListCore<any, any>;
+  store: ListCore<any, any> | ListCoreV2<any, any>;
 }>();
 const { store } = props;
 const response = ref(store.response);
@@ -41,7 +42,7 @@ const className = cn("relative", props.class);
     <show :when="response.empty">
       <div class="w-full h-[480px] center flex items-center justify-center">
         <div class="flex flex-col items-center justify-center text-slate-500">
-          <div>🌲</div>
+          <div><Bird class="w-24 h-24" /></div>
           <div class="mt-4 flex items-center space-x-2">
             <show :when="response.loading"> ... </show>
             <div class="text-xl text-center">

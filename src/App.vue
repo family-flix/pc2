@@ -1,19 +1,80 @@
 <script setup lang="ts">
 import { onMounted, ref, defineComponent } from "vue";
 
-import StackRouteView from "@/components/ui/StackRouteView.vue";
-import { connect } from "@/domains/app/connect.web";
-import { rootView, homeLayout, pages, homeIndexPage } from "@/store/views";
-import { app } from "@/store/app";
-import { cn } from "@/utils";
+import { PageKeys } from "./store/types";
+import { messageList, history, app } from "./store/index";
+import { routesWithPathname } from "./store/routes";
+import { pages } from "./store/views";
+import { client } from "./store/request";
+import { storage } from "./store/storage";
+import StackRouteView from "./components/ui/StackRouteView.vue";
+import { connect as connectApplication } from "./domains/app/connect.web";
+import { connect as connectHistory } from "./domains/history/connect.web";
+import { NavigatorCore } from "./domains/navigator/index";
+import { DialogCore, ToastCore } from "./domains/ui/index";
+import { MediaOriginCountry } from "./constants/index";
+import { cn } from "./utils/index";
 
 // import MediaCheck from "./components/MediaCheck.vue";
 
-const { router } = app;
-app.onPopState((options) => {
-  const { type, pathname } = options;
-  router.handlePopState({ type, pathname });
+history.onClickLink(({ href, target }) => {
+  const { pathname, query } = NavigatorCore.parse(href);
+  const route = routesWithPathname[pathname];
+  // console.log("[ROOT]history.onClickLink", pathname, query, route);
+  if (!route) {
+    app.tip({
+      text: ["没有匹配的页面"],
+    });
+    return;
+  }
+  if (target === "_blank") {
+    const u = history.buildURLWithPrefix(route.name, query);
+    window.open(u);
+    return;
+  }
+  history.push(route.name, query);
+  return;
 });
+history.onBack(() => {
+  window.history.back();
+});
+history.$router.onPopState((r) => {
+  const { type, pathname, href } = r;
+  // console.log("[ROOT]index - app.onPopState", type, pathname, href);
+  if (type === "back") {
+    history.back();
+    return;
+  }
+  if (type === "forward") {
+    history.forward();
+    return;
+  }
+});
+history.$router.onPushState(({ from, to, path, pathname }) => {
+  console.log("[ROOT]index - before history.pushState", from, to, path, pathname);
+  window.history.pushState(
+    {
+      from,
+      to,
+    },
+    "",
+    path
+  );
+});
+history.$router.onReplaceState(({ from, path, pathname }) => {
+  console.log("[ROOT]index - before history.replaceState", from, path, pathname);
+  window.history.replaceState(
+    {
+      from,
+    },
+    "",
+    path
+  );
+});
+connectApplication(app);
+connectHistory(history);
+const view = history.$view;
+const toast = new ToastCore();
 
 defineComponent({
   components: {
@@ -21,35 +82,65 @@ defineComponent({
     "stack-route-view": StackRouteView,
   },
 });
-const subViews = ref(rootView.subViews);
+const subViews = ref(view.subViews);
 
 onMounted(() => {
-  connect(app);
   // console.log("[]Application - before start", window.history, window.innerWidth);
-  rootView.onSubViewsChange((nextSubViews) => {
-    console.log(...rootView.log("[]Application - subViews changed", nextSubViews));
+  view.onSubViewsChange((nextSubViews) => {
+    console.log("[ROOT]rootView.onSubViewsChange", nextSubViews.length);
     subViews.value = nextSubViews;
+  });
+  history.onRouteChange(({ ignore, reason, view, href }) => {
+    console.log("[ROOT]rootView.onRouteChange", href, history.$router.href);
+    const { title } = view;
+    app.setTitle(title);
+    if (ignore) {
+      return;
+    }
+    // if (app.env.ios) {
+    //   return;
+    // }
+    if (reason === "push") {
+      history.$router.pushState(href);
+    }
+    if (reason === "replace") {
+      history.$router.replaceState(href);
+    }
   });
   app.onTip((msg) => {
     const { text } = msg;
-    alert(text.join("\n"));
-  });
-  app.onReady(() => {
-    const matched = pages.find((v) => {
-      return v.checkMatchRegexp(router.pathname);
+    toast.show({
+      texts: text,
     });
-    if (matched) {
-      matched.query = router.query;
-      // @todo 这样写只能展示 /home/xxx 路由，应该根据路由，找到多层级视图，即 rootView,homeLayout,homeIndexPage 这样
-      rootView.showSubView(homeLayout);
-      homeLayout.showSubView(matched);
+  });
+  // app.onUpdate(() => {
+  //   updateDialog.show();
+  // });
+  app.onReady(() => {
+    // setReady(true);
+    client.appendHeaders({
+      Authorization: app.$user.token,
+    });
+    messageList.init();
+    const { pathname, query } = history.$router;
+    console.log("[ROOT]onMount", pathname);
+    const route = routesWithPathname[pathname];
+    if (route && !history.isLayout(route.name)) {
+      history.push(route.name, query, { ignore: true });
       return;
     }
-    rootView.showSubView(homeLayout);
-    homeLayout.showSubView(homeIndexPage);
+    history.push("root.home_layout.home_index", {}, { ignore: true });
   });
-  const { innerWidth, innerHeight, location } = window;
-  app.router.prepare(location);
+  app.onTip((msg) => {
+    const { text } = msg;
+    toast.show({
+      texts: text,
+    });
+  });
+  // app.onError((err) => {
+  //   setError(err);
+  // });
+  history.$router.prepare(location);
   app.start({
     width: innerWidth,
     height: innerHeight,
@@ -72,7 +163,15 @@ const className = cn(
       :className="className"
       :index="index"
     >
-      <component :is="view.component" :view="view" :app="app" :router="app.router"></component>
+      <component
+        :is="pages[view.name as Exclude<PageKeys, 'root'>]"
+        :app="app"
+        :history="history"
+        :client="client"
+        :storage="storage"
+        :pages="pages"
+        :view="view"
+      ></component>
     </stack-route-view>
   </div>
   <!-- <media-check /> -->

@@ -1,6 +1,5 @@
-import { Handler } from "mitt";
-
-import { BaseDomain } from "@/domains/base";
+import { BaseDomain, Handler } from "@/domains/base";
+import { Rect } from "@/types/index";
 
 import type {
   Alignment,
@@ -14,7 +13,6 @@ import type {
   Axis,
   Length,
 } from "./types";
-import { Rect } from "@/types";
 
 const SIDE_OPTIONS = ["top", "right", "bottom", "left"] as const;
 const ALIGN_OPTIONS = ["start", "center", "end"] as const;
@@ -138,11 +136,11 @@ export class PopperCore extends BaseDomain<TheTypesOfEvents> {
 
   /** 基准元素加载完成 */
   setReference(reference: { getRect: () => Rect }) {
-    console.log("setReference", this.reference, reference, this._name);
+    console.log("[DOMAIN/ui]popper/index - setReference", this.reference, reference, this._name);
     if (this.reference !== null) {
       return;
     }
-    console.log("[PopperCore]setReference", reference);
+    // console.log("[PopperCore]setReference", reference);
     this.reference = reference;
     this.state.reference = true;
     this.emit(Events.ReferenceMounted, reference);
@@ -150,7 +148,7 @@ export class PopperCore extends BaseDomain<TheTypesOfEvents> {
   }
   /** 更新基准元素（右键菜单时会用到这个方法） */
   updateReference(reference: { getRect: () => Rect }) {
-    console.log("updateReference", this.reference);
+    // console.log("updateReference", this.reference);
     if (this.reference === null) {
       return;
     }
@@ -175,6 +173,7 @@ export class PopperCore extends BaseDomain<TheTypesOfEvents> {
   setConfig(config: { placement?: Placement; strategy?: Strategy }) {}
   /** 计算浮动元素位置 */
   async place() {
+    console.log('[DOMAIN/ui]popper/index - place', this.reference, this.floating);
     // console.log(...this.log("place", this.reference, this.floating));
     this.middleware = [
       // arrow({

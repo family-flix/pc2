@@ -1,11 +1,10 @@
 import dayjs from "dayjs";
 
-import { ReportTypes } from "@/constants";
 import { FetchParams } from "@/domains/list/typing";
-import { ListResponse, ListResponseWithCursor, RequestedResource, Result } from "@/types";
-import { request } from "@/utils/request";
-import { MediaTypes, CollectionTypes } from "@/constants";
-import { season_to_chinese_num } from "@/utils";
+import { TmpRequestResp, request } from "@/domains/request/utils";
+import { ListResponse, ListResponseWithCursor, RequestedResource, Result, UnpackedResult } from "@/types/index";
+import { MediaTypes, CollectionTypes, ReportTypes } from "@/constants/index";
+import { relative_time_from_now, season_to_chinese_num } from "@/utils/index";
 
 export function reportSomething(body: {
   type: ReportTypes;
@@ -14,11 +13,6 @@ export function reportSomething(body: {
   media_source_id?: string;
 }) {
   return request.post("/api/v2/wechat/report/create", body);
-}
-
-export function fetch_subtitle_url(params: { id: string }) {
-  const { id } = params;
-  return request.get<{ name: string; url: string }>(`/api/subtitle/${id}/url`);
 }
 
 type AnswerPayload = Partial<{
@@ -34,24 +28,25 @@ type AnswerPayload = Partial<{
 /**
  * 获取消息通知
  */
-export async function fetchNotifications(params: FetchParams) {
-  const r = await request.post<
-    ListResponse<{
+export function fetchNotifications(params: FetchParams) {
+  return request.post<
+    ListResponseWithCursor<{
       id: string;
       content: string;
       status: number;
       created: string;
     }>
-  >("/api/notification/list", params);
+  >("/api/v2/wechat/notification/list", params);
+}
+export function fetchNotificationsProcess(r: TmpRequestResp<typeof fetchNotifications>) {
   if (r.error) {
     return Result.Err(r.error);
   }
-  const { page, page_size, total, no_more, list } = r.data;
+  const { next_marker, page_size, total, list } = r.data;
   return Result.Ok({
-    page,
     page_size,
     total,
-    no_more,
+    next_marker,
     list: list.map((notify) => {
       const { id, content, status, created } = notify;
       const { msg, media } = JSON.parse(content) as AnswerPayload;
@@ -68,11 +63,13 @@ export async function fetchNotifications(params: FetchParams) {
 
 export function readNotification(params: { id: string }) {
   const { id } = params;
-  return request.get(`/api/notification/${id}/read`);
+  return request.post("/api/v2/wechat/notification/read", {
+    id,
+  });
 }
 
 export function readAllNotification() {
-  return request.get(`/api/notification/read`);
+  return request.post("/api/v2/wechat/notification/read_all", {});
 }
 
 export function fetchInfo() {
@@ -120,12 +117,13 @@ export function fetchInviteeList(params: FetchParams) {
         used: number;
       }[];
     }>
+    // @ts-ignore
   >("/api/invitee/list", params);
 }
-export type InviteeItem = RequestedResource<typeof fetchInviteeList>["list"][number];
+export type InviteeItem = UnpackedResult<TmpRequestResp<typeof fetchInviteeList>>["list"][number];
 
-export async function fetchCollectionList(body: FetchParams) {
-  const r = await request.post<
+export function fetchCollectionList(body: FetchParams) {
+  return request.post<
     ListResponseWithCursor<{
       id: string;
       title: string;
@@ -144,6 +142,8 @@ export async function fetchCollectionList(body: FetchParams) {
       }[];
     }>
   >("/api/v2/wechat/collection/list", body);
+}
+export function fetchCollectionListProcess(r: TmpRequestResp<typeof fetchCollectionList>) {
   if (r.error) {
     return Result.Err(r.error.message);
   }
@@ -191,8 +191,8 @@ export async function fetchCollectionList(body: FetchParams) {
 }
 
 /** 获取今日新增影视剧 */
-export async function fetchUpdatedMediaToday() {
-  const r = await request.get<
+export function fetchUpdatedMediaToday() {
+  return request.get<
     ListResponse<{
       id: string;
       title: string;
@@ -209,6 +209,8 @@ export async function fetchUpdatedMediaToday() {
       }[];
     }>
   >("/api/collection/list", { type: CollectionTypes.DailyUpdate });
+}
+export function fetchUpdatedMediaTodayProcess(r: TmpRequestResp<typeof fetchUpdatedMediaToday>) {
   if (r.error) {
     return Result.Err(r.error.message);
   }
@@ -273,4 +275,68 @@ export function fetchTVChannelList(params: FetchParams) {
       url: string;
     }>
   >("/api/tv_live/list", params);
+}
+
+/** 获取有更新的观看历史 */
+export function fetchUpdatedMediaHasHistory(params: FetchParams) {
+  return request.post<
+    ListResponse<{
+      id: string;
+      latest_episode_created: string;
+      cur_episode_name: string;
+      cur_episode_order: number;
+      name: string;
+      poster_path: string;
+      updated: string;
+      thumbnail_path: string;
+      member_name: string;
+      latest_episode_order: number;
+      latest_episode_name: string;
+    }>
+  >("/api/v2/wechat/history/updated", {
+    page: params.page,
+    page_size: params.pageSize,
+  });
+}
+export function fetchUpdatedMediaHasHistoryProcess(r: TmpRequestResp<typeof fetchUpdatedMediaHasHistory>) {
+  if (r.error) {
+    return Result.Err(r.error.message);
+  }
+  const { page, page_size, no_more, list } = r.data;
+  return Result.Ok({
+    page,
+    page_size,
+    no_more,
+    list: list.map((media) => {
+      const {
+        id,
+        name,
+        poster_path,
+        thumbnail_path,
+        updated,
+        latest_episode_order,
+        latest_episode_name,
+        latest_episode_created,
+        cur_episode_name,
+        cur_episode_order,
+      } = media;
+      return {
+        id,
+        name,
+        poster_path,
+        episode_added: latest_episode_order - cur_episode_order,
+        thumbnail_path,
+        cur_episode: {
+          order: cur_episode_order,
+          name: cur_episode_name,
+          updated_at: relative_time_from_now(updated),
+        },
+        latest_episode: {
+          order: latest_episode_order,
+          name: latest_episode_name,
+          created_at: relative_time_from_now(latest_episode_created),
+        },
+      };
+    }),
+  });
 }

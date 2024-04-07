@@ -1,7 +1,13 @@
-import { PlayerCore } from ".";
+import { Result } from "@/types/index";
+
+import { PlayerCore } from "./index";
 
 /** 连接 $video 标签和 player 领域 */
 export function connect($video: HTMLVideoElement, player: PlayerCore) {
+  // const canvas = document.createElement("canvas");
+  // const context = canvas.getContext("2d", {
+  //   willReadFrequently: true,
+  // });
   $video.onloadstart = () => {
     // 1
     console.log("[COMPONENT]VideoPlayer/connect - $video.onloadstart");
@@ -14,6 +20,8 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     const width = this.videoWidth;
     // @ts-ignore
     const height = this.videoHeight;
+    // canvas.width = width;
+    // canvas.height = height;
     player.handleLoadedmetadata({
       width,
       height,
@@ -99,6 +107,23 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
   $video.addEventListener("webkitendfullscreen", () => {
     player.handleFullscreenChange(false);
   });
+  // player.screenshot = () => {
+  //   return new Promise((resolve) => {
+  //     if (!context) {
+  //       resolve(Result.Err("getContext 失败"));
+  //       return;
+  //     }
+  //     context.drawImage($video, 0, 0, canvas.width, canvas.height);
+  //     canvas.toBlob((blob) => {
+  //       if (!blob) {
+  //         resolve(Result.Err("toBlob 失败"));
+  //         return;
+  //       }
+  //       const url = URL.createObjectURL(blob);
+  //       resolve(Result.Ok(url));
+  //     }, "image/jpeg");
+  //   });
+  // };
   player.bindAbstractNode({
     $node: $video,
     async play() {
@@ -137,6 +162,24 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       $video.setAttribute("webkit-playsinline", "true");
       $video.setAttribute("playsinline", "true");
     },
+    requestFullscreen() {
+      if ($video.requestFullscreen) {
+        // 标准 API
+        $video.requestFullscreen();
+      }
+      if (($video as any).webkitRequestFullscreen) {
+        // Webkit 内核（如 Chrome、Safari）前缀版
+        ($video as any).webkitRequestFullscreen();
+      }
+      if (($video as any).mozRequestFullScreen) {
+        // Firefox 前缀版
+        ($video as any).mozRequestFullScreen();
+      }
+      if (($video as any).msRequestFullscreen) {
+        // IE/Edge 前缀版
+        ($video as any).msRequestFullscreen();
+      }
+    },
     showSubtitle() {
       if ($video.textTracks[0]) {
         $video.textTracks[0].mode = "showing";
@@ -152,7 +195,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       // @ts-ignore
       if ($video.webkitShowPlaybackTargetPicker) {
         // @ts-ignore
-        $video.webkitShowPlaybackTargetPicker;
+        $video.webkitShowPlaybackTargetPicker();
         return;
       }
       alert("AirPlay not supported.");

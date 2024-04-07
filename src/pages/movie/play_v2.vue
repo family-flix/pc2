@@ -3,6 +3,12 @@ import { ref, defineComponent } from "vue";
 import { ArrowLeft, Layers, Play, Pause, FastForward, Rewind, SkipForward, Settings, Maximize } from "lucide-vue-next";
 import { CheckCheck, Minimize } from "lucide-vue-next";
 
+import { reportSomething } from "@/services/index";
+import { GlobalStorageValues, ViewComponentProps } from "@/store/types";
+import Video from "@/components/Video.vue";
+import PlayerProgressBar from "@/components/player-progress-bar/index.vue";
+import Presence from "@/components/ui/Presence.vue";
+import Dialog from "@/components/ui/Dialog.vue";
 import { PlayerCore } from "@/domains/player";
 import { createVVTSubtitle } from "@/domains/subtitle/utils";
 import { RefCore } from "@/domains/cur";
@@ -15,15 +21,16 @@ import { MediaResolutionTypes } from "@/domains/source/constants";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { PresenceCore } from "@/domains/ui/presence";
 import { DialogCore } from "@/domains/ui/dialog";
-import { rootView } from "@/store/views";
-import { ViewComponentProps } from "@/types";
-import Video from "@/components/Video.vue";
-import PlayerProgressBar from "@/components/player-progress-bar/index.vue";
-import Presence from "@/components/ui/Presence.vue";
-import Dialog from "@/components/ui/Dialog.vue";
+import { HttpClientCore } from "@/domains/http_client";
+import { StorageCore } from "@/domains/storage";
+import { RequestCoreV2 } from "@/domains/request/v2";
 
-class MoviePlayingPageLogic {
-  $app: Application;
+class MoviePlayingPageLogic<
+  P extends { app: Application; client: HttpClientCore; storage: StorageCore<GlobalStorageValues> }
+> {
+  $app: P["app"];
+  $client: P["client"];
+  $storage: P["storage"];
   $tv: MovieMediaCore;
   $player: PlayerCore;
   $settings: RefCore<{
@@ -32,16 +39,19 @@ class MoviePlayingPageLogic {
     type: MediaResolutionTypes;
   }>;
   $report: RefCore<string>;
+  $createReport: RequestCoreV2<{ fetch: typeof reportSomething; client: HttpClientCore }>;
 
-  constructor(props: { app: Application }) {
-    const { app } = props;
+  constructor(props: P) {
+    const { app, client, storage } = props;
     this.$app = app;
+    this.$client = client;
+    this.$storage = storage;
 
-    const settings = app.cache.get("player_settings", {
-      volume: 0.5,
-      rate: 1,
-      type: MediaResolutionTypes.SD,
+    this.$createReport = new RequestCoreV2({
+      fetch: reportSomething,
+      client,
     });
+    const settings = storage.get("player_settings");
     this.$settings = new RefCore<{
       volume: number;
       rate: number;
@@ -52,6 +62,7 @@ class MoviePlayingPageLogic {
     const { type: resolution, volume, rate } = settings;
     const tv = new MovieMediaCore({
       resolution,
+      client,
     });
     this.$tv = tv;
     const player = new PlayerCore({ app, volume, rate });
@@ -67,6 +78,30 @@ class MoviePlayingPageLogic {
       // 锁屏后 currentTime 不是锁屏前的
       player.setCurrentTime(player.currentTime);
     });
+    app.onOrientationChange((orientation) => {
+      console.log("[PAGE]tv/play - app.onOrientationChange", orientation, app.screen.width);
+      if (orientation === "horizontal") {
+        if (!player.hasPlayed && app.env.ios) {
+          //   $$fullscreenDialog.show();
+          return;
+        }
+        if (player.isFullscreen) {
+          return;
+        }
+        player.requestFullScreen();
+        player.isFullscreen = true;
+      }
+      if (orientation === "vertical") {
+        player.disableFullscreen();
+        // $$fullscreenDialog.hide();
+      }
+    });
+    player.onExitFullscreen(() => {
+      player.pause();
+      // if (app.orientation === OrientationTypes.Vertical) {
+      //   player.disableFullscreen();
+      // }
+    });
     tv.onProfileLoaded((profile) => {
       app.setTitle(tv.getTitle().join(" - "));
       const { curSource } = profile;
@@ -76,7 +111,7 @@ class MoviePlayingPageLogic {
       //       bottomOperation.show();
     });
     tv.$source.onSubtitleLoaded((subtitle) => {
-      player.setSubtitle(createVVTSubtitle(subtitle));
+      player.showSubtitle(createVVTSubtitle(subtitle));
     });
     tv.onTip((msg) => {
       app.tip(msg);
@@ -85,7 +120,7 @@ class MoviePlayingPageLogic {
       // console.log("[PAGE]play - tv.onSourceChange", mediaSource.currentTime);
       player.pause();
       player.setSize({ width: mediaSource.width, height: mediaSource.height });
-      app.cache.merge("player_settings", {
+      storage.merge("player_settings", {
         type: mediaSource.type,
       });
       // loadSource 后开始 video loadstart 事件
@@ -120,7 +155,7 @@ class MoviePlayingPageLogic {
       player.play();
     });
     player.onVolumeChange(({ volume }) => {
-      app.cache.merge("player_settings", {
+      storage.merge("player_settings", {
         volume,
       });
     });
@@ -161,22 +196,23 @@ class MoviePlayingPageLogic {
     });
     // console.log("[PAGE]play - before player.onError");
     player.onError(async (error) => {
-      console.log("[PAGE]play - player.onError", error);
+      console.log("[PAGE]play - player.onError", tv.curSource?.name, tv.curSource?.curFileId);
       // router.replaceSilently(`/out_players?token=${token}&tv_id=${view.params.id}`);
       await (async () => {
         if (!tv.curSource) {
           return;
         }
-        // const files = tv.curSource.files;
-        // const curFileId = tv.curSource.curFileId;
-        // const curFileIndex = files.findIndex((f) => f.id === curFileId);
-        // const nextIndex = curFileIndex + 1;
-        // const nextFile = files[nextIndex];
-        // if (!nextFile) {
-        //   app.tip({ text: ["视频加载错误", error.message] });
-        //   return;
-        // }
-        // await tv.changeSourceFile(nextFile);
+        const files = tv.curSource.files;
+        const curFileId = tv.curSource.curFileId;
+        const curFileIndex = files.findIndex((f) => f.id === curFileId);
+        const nextIndex = curFileIndex + 1;
+        const nextFile = files[nextIndex];
+        if (!nextFile) {
+          app.tip({ text: ["视频加载错误", error.message] });
+          player.setInvalid(error.message);
+          return;
+        }
+        await tv.changeSourceFile(nextFile);
       })();
       player.pause();
     });
@@ -282,9 +318,9 @@ defineComponent({
     PlayerProgressBar,
   },
 });
-const { app, view } = defineProps<ViewComponentProps>();
+const { app, view, client, storage, history } = defineProps<ViewComponentProps>();
 
-const $logic = new MoviePlayingPageLogic({ app });
+const $logic = new MoviePlayingPageLogic({ app, client, storage });
 const $page = new MoviePlayingPageView({ view });
 
 const pageRef = ref<HTMLDivElement | null>(null);
@@ -298,7 +334,7 @@ const isFull = ref(false);
 const playerState = ref($logic.$player.state);
 
 function back() {
-  rootView.uncoverPrevView();
+  history.back();
 }
 if (view.query.rate) {
   $logic.$player.changeRate(Number(view.query.rate));
@@ -362,7 +398,7 @@ function changeResolution(resolution: { type: MediaResolutionTypes }) {
 }
 function changeRate(rate: number) {
   $logic.$player.changeRate(rate);
-  app.cache.merge("player_settings", {
+  storage.merge("player_settings", {
     rate,
   });
 }
@@ -404,7 +440,7 @@ $logic.$tv.fetchProfile(view.query.id);
         >
           <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-b to-transparent from-w-black"></div>
           <div class="relative z-20 p-4 text-w-white" @click.stop>
-            <div class="flex items-center cursor-pointer" @click="rootView.uncoverPrevView">
+            <div class="flex items-center cursor-pointer" @click="back">
               <div class="inline-template p-4">
                 <ArrowLeft class="w-8 h-8" />
               </div>
@@ -489,7 +525,7 @@ $logic.$tv.fetchProfile(view.query.id);
         <div class="space-y-2">
           <template v-for="resolution in curSource?.resolutions">
             <div
-              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeResolution(resolution)"
             >
               <div class="">{{ resolution.typeText }}</div>
@@ -504,7 +540,7 @@ $logic.$tv.fetchProfile(view.query.id);
         <div class="space-y-2">
           <template v-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]">
             <div
-              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeRate(rate)"
             >
               <div class="">{{ rate }}x</div>
@@ -519,7 +555,7 @@ $logic.$tv.fetchProfile(view.query.id);
         <div class="space-y-2">
           <template v-for="file in profile.curSource?.files">
             <div
-              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeSourceFile(file)"
             >
               <div class="">{{ file.name }}</div>

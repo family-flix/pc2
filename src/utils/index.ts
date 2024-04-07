@@ -1073,7 +1073,7 @@ export function is_video_file(filename: string) {
   return video_file_regexp.test(filename);
 }
 
-export function query_stringify(query: Record<string, string | number | undefined>) {
+export function query_stringify(query: Record<string, string | number | boolean | null | undefined>) {
   return Object.keys(query)
     .filter((key) => {
       return query[key] !== undefined;

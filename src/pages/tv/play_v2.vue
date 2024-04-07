@@ -3,6 +3,11 @@ import { ref, defineComponent } from "vue";
 import { ArrowLeft, Layers, Play, Pause, FastForward, Rewind, SkipForward, Settings, Maximize } from "lucide-vue-next";
 import { CheckCheck, Minimize } from "lucide-vue-next";
 
+import { GlobalStorageValues, ViewComponentProps } from "@/store/types";
+import Video from "@/components/Video.vue";
+import PlayerProgressBar from "@/components/player-progress-bar/index.vue";
+import Presence from "@/components/ui/Presence.vue";
+import Dialog from "@/components/ui/Dialog.vue";
 import { PlayerCore } from "@/domains/player";
 import { createVVTSubtitle } from "@/domains/subtitle/utils";
 import { RefCore } from "@/domains/cur";
@@ -14,15 +19,15 @@ import { MediaResolutionTypes } from "@/domains/source/constants";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { PresenceCore } from "@/domains/ui/presence";
 import { DialogCore } from "@/domains/ui/dialog";
-import { rootView } from "@/store/views";
-import { ViewComponentProps } from "@/types";
-import Video from "@/components/Video.vue";
-import PlayerProgressBar from "@/components/player-progress-bar/index.vue";
-import Presence from "@/components/ui/Presence.vue";
-import Dialog from "@/components/ui/Dialog.vue";
+import { HttpClientCore } from "@/domains/http_client";
+import { StorageCore } from "@/domains/storage";
 
-class SeasonPlayingPageLogic {
-  $app: Application;
+class SeasonPlayingPageLogic<
+  P extends { app: Application; client: HttpClientCore; storage: StorageCore<GlobalStorageValues> }
+> {
+  $app: P["app"];
+  $storage: P["storage"];
+  $client: P["client"];
   $tv: SeasonMediaCore;
   $player: PlayerCore;
   $settings: RefCore<{
@@ -37,27 +42,27 @@ class SeasonPlayingPageLogic {
     type: MediaResolutionTypes;
   };
 
-  constructor(props: { app: Application }) {
-    const { app } = props;
+  constructor(props: P) {
+    const { app, storage, client } = props;
 
     this.$app = app;
+    this.$storage = storage;
+    this.$client = client;
 
-    const settings = app.cache.get("player_settings", {
-      volume: 0.5,
-      rate: 1,
-      type: MediaResolutionTypes.SD as MediaResolutionTypes,
-    });
+    const settings = storage.get("player_settings");
     this.settings = settings;
     this.$settings = new RefCore({
       value: settings,
     });
     const { type: resolution, volume, rate } = settings;
     const tv = new SeasonMediaCore({
+      client,
       resolution,
     });
     this.$tv = tv;
     const player = new PlayerCore({ app, volume, rate });
     this.$player = player;
+    // console.log("[PAGE]play - useInitialize");
 
     app.onHidden(() => {
       player.pause();
@@ -66,6 +71,38 @@ class SeasonPlayingPageLogic {
       console.log("[PAGE]play - app.onShow", player.currentTime);
       // 锁屏后 currentTime 不是锁屏前的
       player.setCurrentTime(player.currentTime);
+    });
+    app.onOrientationChange((orientation) => {
+      console.log("[PAGE]tv/play - app.onOrientationChange", orientation, app.screen.width);
+      if (orientation === "horizontal") {
+        if (!player.hasPlayed && app.env.ios) {
+          // fullscreenDialog.show();
+          return;
+        }
+        if (player.isFullscreen) {
+          return;
+        }
+        player.requestFullScreen();
+        player.isFullscreen = true;
+      }
+      if (orientation === "vertical") {
+        player.disableFullscreen();
+        // fullscreenDialog.hide();
+        // console.log("[PAGE]tv/play - app.onOrientationChange", tv.curSourceFile?.width, tv.curSourceFile?.height);
+        if (tv.$source.profile) {
+          const { width, height } = tv.$source.profile;
+          player.setSize({ width, height });
+        }
+      }
+    });
+    player.onExitFullscreen(() => {
+      player.pause();
+      // if (tv.curSourceFile) {
+      //   player.setSize({ width: tv.curSourceFile.width, height: tv.curSourceFile.height });
+      // }
+      // if (app.orientation === OrientationTypes.Vertical) {
+      //   player.disableFullscreen();
+      // }
     });
     tv.onProfileLoaded((profile) => {
       app.setTitle(tv.getTitle().join(" - "));
@@ -80,9 +117,9 @@ class SeasonPlayingPageLogic {
       player.setCurrentTime(curEpisode.currentTime);
       // bottomOperation.show();
     });
-    // tv.$source.onSubtitleLoaded((subtitle) => {
-    // player.setSubtitle(createVVTSubtitle(subtitle));
-    // });
+    tv.$source.onSubtitleLoaded((subtitle) => {
+      player.showSubtitle(createVVTSubtitle(subtitle));
+    });
     tv.onEpisodeChange((curEpisode) => {
       app.setTitle(tv.getTitle().join(" - "));
       const { currentTime } = curEpisode;
@@ -105,11 +142,14 @@ class SeasonPlayingPageLogic {
       console.log("[PAGE]play - tv.onSourceChange", mediaSource.currentTime);
       player.pause();
       player.setSize({ width: mediaSource.width, height: mediaSource.height });
-      app.cache.merge("player_settings", {
+      storage.merge("player_settings", {
         type: mediaSource.type,
       });
       // loadSource 后开始 video loadstart 事件
       player.loadSource(mediaSource);
+    });
+    player.onReady(() => {
+      player.disableFullscreen();
     });
     player.onCanPlay(() => {
       const { currentTime } = tv;
@@ -137,15 +177,18 @@ class SeasonPlayingPageLogic {
       player.play();
     });
     player.onVolumeChange(({ volume }) => {
-      app.cache.merge("player_settings", {
+      storage.merge("player_settings", {
         volume,
       });
     });
     player.onProgress(({ currentTime, duration }) => {
-      // console.log("[PAGE]TVPlaying - onProgress", currentTime);
+      // console.log("[PAGE]tv/play_v2 - onProgress", currentTime, !player._canPlay);
       if (!player._canPlay) {
         return;
       }
+      // player.screenshot().then((url) => {
+      //   console.log(url);
+      // });
       tv.handleCurTimeChange({
         currentTime,
         duration,
@@ -174,15 +217,23 @@ class SeasonPlayingPageLogic {
       }
     });
     // console.log("[PAGE]play - before player.onError");
-    player.onError((error) => {
+    player.onError(async (error) => {
       console.log("[PAGE]play - player.onError", error);
-      // router.replaceSilently(`/out_players?token=${token}&tv_id=${view.params.id}`);
-      (() => {
-        // if (error.message.includes("格式")) {
-        //   errorTipDialog.show();
-        //   return;
-        // }
-        app.tip({ text: ["视频加载错误", error.message] });
+      await (async () => {
+        if (!tv.curSource) {
+          return;
+        }
+        const files = tv.curSource.files;
+        const curFileId = tv.curSource.curFileId;
+        const curFileIndex = files.findIndex((f) => f.id === curFileId);
+        const nextIndex = curFileIndex + 1;
+        const nextFile = files[nextIndex];
+        if (!nextFile) {
+          app.tip({ text: ["视频加载错误", error.message] });
+          player.setInvalid(error.message);
+          return;
+        }
+        await tv.changeSourceFile(nextFile);
       })();
       player.pause();
     });
@@ -289,9 +340,9 @@ defineComponent({
     PlayerProgressBar,
   },
 });
-const { app, view } = defineProps<ViewComponentProps>();
+const { app, view, client, storage, history } = defineProps<ViewComponentProps>();
 
-const $logic = new SeasonPlayingPageLogic({ app });
+const $logic = new SeasonPlayingPageLogic({ app, client, storage });
 const $page = new SeasonPlayingPageView({ view });
 
 const pageRef = ref<HTMLDivElement | null>(null);
@@ -305,7 +356,7 @@ const isFull = ref(false);
 const playerState = ref($logic.$player.state);
 
 function back() {
-  rootView.uncoverPrevView();
+  history.back();
 }
 if (view.query.rate) {
   $logic.$player.changeRate(Number(view.query.rate));
@@ -373,7 +424,7 @@ function changeResolution(resolution: { type: MediaResolutionTypes }) {
 }
 function changeRate(rate: number) {
   $logic.$player.changeRate(rate);
-  app.cache.merge("player_settings", {
+  storage.merge("player_settings", {
     rate,
   });
 }
@@ -415,7 +466,7 @@ $logic.$tv.fetchProfile(view.query.id);
         >
           <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-b to-transparent from-w-black"></div>
           <div class="relative z-20 p-4 text-w-white" @click.stop>
-            <div class="flex items-center cursor-pointer" @click="rootView.uncoverPrevView">
+            <div class="flex items-center cursor-pointer" @click="back">
               <div class="inline-template p-4">
                 <ArrowLeft class="w-8 h-8" />
               </div>
@@ -540,7 +591,7 @@ $logic.$tv.fetchProfile(view.query.id);
         <div class="space-y-2">
           <template v-for="resolution in curSource?.resolutions">
             <div
-              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeResolution(resolution)"
             >
               <div class="">{{ resolution.typeText }}</div>
@@ -555,7 +606,7 @@ $logic.$tv.fetchProfile(view.query.id);
         <div class="space-y-2">
           <template v-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]">
             <div
-              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeRate(rate)"
             >
               <div class="">{{ rate }}x</div>
@@ -570,7 +621,7 @@ $logic.$tv.fetchProfile(view.query.id);
         <div class="space-y-2">
           <template v-for="file in profile.curSource?.files">
             <div
-              :class="'relative flex justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
               @click="changeSourceFile(file)"
             >
               <div class="">{{ file.name }}</div>

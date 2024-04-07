@@ -1,12 +1,10 @@
 /**
  * @file 播放器
  */
-import { Handler } from "mitt";
-
-import { BaseDomain } from "@/domains/base";
+import { BaseDomain, Handler } from "@/domains/base";
 import { MediaResolutionTypes } from "@/domains/source/constants";
 import { Application } from "@/domains/app";
-import { app } from "@/store/app";
+import { Result } from "@/types";
 
 enum Events {
   Mounted,
@@ -98,7 +96,9 @@ type TheTypesOfEvents = {
   [Events.StateChange]: PlayerState;
 };
 
-type PlayerProps = {};
+type PlayerProps = {
+  app: Application;
+};
 type PlayerState = {
   playing: boolean;
   poster?: string;
@@ -114,12 +114,15 @@ type PlayerState = {
     lang: string;
     src: string;
   };
+  error?: string;
 };
 
 export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   /** 视频信息 */
   metadata: { url: string; thumbnail?: string } | null = null;
   static Events = Events;
+
+  $app: Application;
 
   private _timer: null | number = null;
   _canPlay = false;
@@ -141,6 +144,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   prepareFullscreen = false;
   _progress = 0;
   virtualProgress = 0;
+  errorMsg = "";
   private _passPoint = false;
   private _size: { width: number; height: number } = { width: 0, height: 0 };
   private _abstractNode: {
@@ -154,12 +158,12 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     setRate: (v: number) => void;
     enableFullscreen: () => void;
     disableFullscreen: () => void;
+    requestFullscreen: () => void;
     showSubtitle: () => void;
     hideSubtitle: () => void;
     showAirplay: () => void;
     pictureInPicture: () => void;
   } | null = null;
-  private _app: Application;
 
   get state(): PlayerState {
     return {
@@ -168,6 +172,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       width: this._size.width,
       height: this._size.height,
       ready: this._canPlay,
+      error: this.errorMsg,
       rate: this._curRate,
       volume: this._curVolume,
       currentTime: this._currentTime,
@@ -186,7 +191,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     if (rate) {
       this._curRate = rate;
     }
-    this._app = app;
+    this.$app = app;
   }
 
   bindAbstractNode(node: PlayerCore["_abstractNode"]) {
@@ -208,9 +213,6 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       return;
     }
     if (this.playing) {
-      return;
-    }
-    if (!this._canPlay) {
       return;
     }
     this._abstractNode.play();
@@ -246,7 +248,6 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this._curRate = v;
     console.log("[DOMAIN]player/index - changeRate", v);
     this._abstractNode.setRate(v);
-    this.emit(Events.StateChange, { ...this.state });
     this.emit(Events.RateChange, { rate: v });
   }
   showAirplay() {
@@ -280,6 +281,20 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this._currentTime = currentTime || 0;
     this._abstractNode.setCurrentTime(currentTime || 0);
   }
+  speedUp() {
+    let target = this._currentTime + 10;
+    if (this._duration && target >= this._duration) {
+      target = this._duration;
+    }
+    this.setCurrentTime(target);
+  }
+  rewind() {
+    let target = this._currentTime - 10;
+    if (target <= 0) {
+      target = 0;
+    }
+    this.setCurrentTime(target);
+  }
   setSize(size: { width: number; height: number }) {
     if (
       this._size.width !== 0 &&
@@ -289,6 +304,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     ) {
       return;
     }
+    const app = this.$app;
     const { width, height } = size;
     const h = Math.ceil((height / width) * app.screen.width);
     console.log("[DOMAIN]player/index - setSize", app.screen.width, h);
@@ -305,7 +321,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   setResolution(values: { type: MediaResolutionTypes; text: string }) {
     this.emit(Events.ResolutionChange, values);
   }
-  setSubtitle(subtitle: { src: string; label: string; lang: string }) {
+  showSubtitle(subtitle: { src: string; label: string; lang: string }) {
     this.subtitle = subtitle;
     this.emit(Events.StateChange, { ...this.state });
     const $video = this._abstractNode;
@@ -335,19 +351,22 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     if (!$video) {
       return;
     }
-    // 这里不暂停，就没法先允许全屏，再通过播放来全屏了
-    $video.enableFullscreen();
-    this.pause();
-    this.enableFullscreen();
-    setTimeout(() => {
+    if (this.$app.env.android) {
       this.play();
-      // 300 的延迟是 video 保证重渲染 play inline 后，才开始播放
-    }, 800);
+      $video.requestFullscreen();
+      return;
+    }
+    // 这里不暂停，就没法先允许全屏，再通过播放来全屏了
+    this.pause();
+    $video.enableFullscreen();
+    this.play();
   }
   loadSource(video: { url: string }) {
     this.metadata = video;
     this._canPlay = false;
+    this.errorMsg = "";
     this.emit(Events.UrlChange, video);
+    this.emit(Events.StateChange, { ...this.state });
   }
   preloadSource(url: string) {
     this.emit(Events.Preload, { url });
@@ -378,6 +397,9 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this.setCurrentTime(targetTime);
     this.play();
     this.emit(Events.AfterAdjustCurrentTime);
+  }
+  async screenshot(): Promise<Result<string>> {
+    return Result.Err("请实现 screenshot 方法");
   }
   node() {
     if (!this._abstractNode) {
@@ -420,17 +442,31 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this._passPoint = false;
   }
   enableFullscreen() {
+    const $video = this._abstractNode;
+    if (!$video) {
+      return;
+    }
     this.prepareFullscreen = true;
+    $video.enableFullscreen();
     this.emit(Events.StateChange, { ...this.state });
   }
   disableFullscreen() {
+    const $video = this._abstractNode;
+    if (!$video) {
+      return;
+    }
     this.prepareFullscreen = false;
+    $video.disableFullscreen();
     this.emit(Events.StateChange, { ...this.state });
   }
   setMounted() {
     this._mounted = true;
     this.emit(Events.Mounted);
     this.emit(Events.Ready);
+  }
+  setInvalid(msg: string) {
+    this.errorMsg = msg;
+    this.emit(Events.StateChange, { ...this.state });
   }
   isFullscreen = false;
   /** ------ 平台 video 触发的事件 start -------- */
@@ -493,6 +529,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   }
   handleError(msg: string) {
     // console.log("[DOMAIN]Player - throwError", msg);
+    // this.errorMsg = msg;
     this.emit(Events.Error, new Error(msg));
   }
 

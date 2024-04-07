@@ -2,12 +2,11 @@
 import { ArrowLeft } from "lucide-vue-next";
 
 import { ViewComponentProps } from "@/types";
-import { rootView } from "@/store/views";
 
 const { app, view } = defineProps<ViewComponentProps>();
 
 function back() {
-  rootView.uncoverPrevView();
+  // rootView.uncoverPrevView();
 }
 </script>
 

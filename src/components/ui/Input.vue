@@ -1,21 +1,29 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 
-import { cn } from "@/utils";
 import { InputCore } from "@/domains/ui/input";
+import { connect } from "@/domains/ui/input/connect.web";
+import { cn } from "@/utils/index";
 
 const props = defineProps<{
-  store: InputCore;
+  store: InputCore<any>;
   class?: string;
 }>();
 const { store } = props;
-const state = ref(store.state);
-function handleChange(event: Event) {
-  const { value } = event.target as HTMLInputElement;
-  console.log('hleloo', value);
-  store.change(value);
-}
 
+const state = ref(store.state);
+const r = ref();
+
+function handleChange(event: Event) {
+  store.handleChange(event);
+}
+onMounted(() => {
+  const $input = r.value;
+  if (!$input) {
+    return;
+  }
+  connect(store, $input);
+});
 store.onStateChange((nextState) => {
   state.value = nextState;
 });
@@ -28,6 +36,7 @@ const className = cn(
 
 <template>
   <input
+    ref="r"
     :class="className"
     :value="state.value"
     :placeholder="state.placeholder"

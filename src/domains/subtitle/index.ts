@@ -1,8 +1,5 @@
-import { Handler } from "mitt";
-import axios from "axios";
-
-// import { fetchSubtitleContent } from "@/services";
-import { BaseDomain } from "@/domains/base";
+import { Handler, BaseDomain } from "@/domains/base";
+import { HttpClientCore } from "@/domains/http_client";
 import { Result } from "@/types";
 import { MediaOriginCountry } from "@/constants";
 
@@ -29,14 +26,15 @@ type SubtitleState = {
 export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
   static async New(
     subtitle: { id: string; type: SubtitleFileTypes; url: string; name: string; language: MediaOriginCountry[] },
-    extra: Partial<{ currentTime: number }> = {}
+    extra: { client: HttpClientCore; currentTime?: number }
   ) {
     const { id, name, type, url, language } = subtitle;
+    const { client } = extra;
     const content_res = await (async () => {
       if (type === SubtitleFileTypes.MediaInnerFile) {
         const r = await (async () => {
           try {
-            const r = await axios.get(url);
+            const r = await client.fetch<string>({ url, method: "GET" });
             return Result.Ok(r.data);
           } catch (err) {
             const e = err as Error;
@@ -53,7 +51,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
       }
       if (type === SubtitleFileTypes.LocalFile) {
         try {
-          const r = await axios.get(url);
+          const r = await client.fetch<string>({ url, method: "GET" });
           return Result.Ok({
             name,
             content: r.data,
@@ -147,10 +145,8 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
     this.targetLine = nextTargetLine;
   }
   handleTimeChange(currentTime: number) {
-    //     if (currentTime < 2) {
-    //     }
     // console.log("[DOMAIN]subtitle/index - handleTimeChange", currentTime, this.curTime, this.targetLine);
-    if (Math.abs(currentTime - this.curTime) > 1) {
+    if (Math.abs(currentTime - this.curTime) >= 1) {
       this.curLine = null;
       this.curLineIndex = null;
       this.emit(Events.StateChange, { ...this.state });
@@ -169,8 +165,6 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
       if (this.curLine && currentTime > this.curLine.endTime) {
         this.curLineIndex = null;
       }
-      // console.log("[DOMAIN]subtitle/index - handleTimeChange check show subtitle");
-      // console.log(currentTime, startSecond, endSecond, this.targetLine.line);
       if (currentTime > startSecond && currentTime <= endSecond) {
         this.curLineIndex = this.lines.findIndex((line) => line === this.targetLine);
         this.targetLine = this.lines[this.curLineIndex + 1] ?? null;
@@ -194,7 +188,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
       }
       this.curLine = this.lines[this.curLineIndex];
     })();
-    // console.log(this.curLine, currentTime);
+    // console.log("[DOMAIN]subtitle/index - before Event.StateChange", this.curLine, currentTime);
     this.emit(Events.StateChange, { ...this.state });
   }
 

@@ -1,11 +1,11 @@
-import { RouteViewCore, onViewCreated } from "@/domains/route_view";
+// import { RouteViewCore, onViewCreated } from "@/domains/route_view";
 /** 首页 */
 import HomeLayout from "@/pages/home/layout.vue";
 import HomeIndexPage from "@/pages/home/index.vue";
-import HomeTVSearchPage from "@/pages/home/search/tv.vue";
-import HomeMovieSearchPage from "@/pages/home/search/movie.vue";
+import HomeTVSearchPage from "@/pages/home/search.vue";
 // import HomeMoviePage from "@/pages/home/movie.vue";
 import HomeHistoryPage from "@/pages/home/history.vue";
+import HomeMinePage from "@/pages/home/mine.vue";
 // import FakeHomePage from "@/pages/fake-home/index.vue";
 // import { HomeSearchPage } from "@/pages/home/search";
 // import { HomeMyPage } from "@/pages/home/my";
@@ -17,77 +17,89 @@ import MoviePlayingPageV2 from "@/pages/movie/play_v2.vue";
 // import MoviePlayingPageV2 from "@/pages/movie/play.vue";
 /** 其他 */
 import Test1Page from "@/pages/test1/index.vue";
-// import { NotFoundPage } from "@/pages/not-found";
+import NotFoundPage from "@/pages/not-found/index.vue";
 
-export const pages: RouteViewCore[] = [];
-onViewCreated((created) => {
-  if (pages.includes(created)) {
-    return;
-  }
-  pages.push(created);
-});
+// export const pages: RouteViewCore[] = [];
+// onViewCreated((created) => {
+//   if (pages.includes(created)) {
+//     return;
+//   }
+//   pages.push(created);
+// });
 
-// rootView.curView = mainLayout;
-// rootView.appendSubView(mainLayout);
-export const homeIndexPage = new RouteViewCore({
-  key: "/home/index",
-  title: "首页",
-  // component: FakeHomePage,
-  component: HomeIndexPage,
-});
-// mainLayout.curView = aView;
-// mainLayout.appendSubView(aView);
-// export const homeMoviePage = new RouteViewCore({
-//   key: "/home/movie",
-//   title: "电影",
-//   component: HomeMoviePage,
+// // rootView.curView = mainLayout;
+// // rootView.appendSubView(mainLayout);
+// export const homeIndexPage = new RouteViewCore({
+//   key: "/home/index",
+//   title: "首页",
+//   // component: FakeHomePage,
+//   component: HomeIndexPage,
 // });
-export const homeTVSearchPage = new RouteViewCore({
-  key: "/search_tv",
-  title: "搜索电视剧",
-  component: HomeTVSearchPage,
-});
-export const homeMovieSearchPage = new RouteViewCore({
-  key: "/search_movie",
-  title: "搜索电影",
-  component: HomeMovieSearchPage,
-});
-export const homeHistoryPage = new RouteViewCore({
-  key: "/home/history",
-  title: "播放历史",
-  component: HomeHistoryPage,
-});
-// export const homeMyPage = new RouteViewCore({
-//   title: "我的",
-//   component: HomeMyPage,
+// // mainLayout.curView = aView;
+// // mainLayout.appendSubView(aView);
+// // export const homeMoviePage = new RouteViewCore({
+// //   key: "/home/movie",
+// //   title: "电影",
+// //   component: HomeMoviePage,
+// // });
+// export const homeTVSearchPage = new RouteViewCore({
+//   key: "/search_tv",
+//   title: "搜索电视剧",
+//   component: HomeTVSearchPage,
 // });
-export const homeLayout = new RouteViewCore({
-  key: "/home",
-  title: "首页",
-  component: HomeLayout,
-});
-export const tvPlayingPage = new RouteViewCore({
-  key: "/tv_play",
-  title: "加载中...",
-  component: SeasonPlayingPageV2,
-});
-export const moviePlayingPage = new RouteViewCore({
-  key: "/movie_play",
-  title: "加载中...",
-  component: MoviePlayingPageV2,
-});
-export const test1Page = new RouteViewCore({
-  key: "/test1",
-  title: "测试",
-  component: Test1Page,
-});
-// export const outerPlayerPage = new RouteViewCore({
+// export const homeMovieSearchPage = new RouteViewCore({
+//   key: "/search_movie",
+//   title: "搜索电影",
+//   component: HomeMovieSearchPage,
+// });
+// export const homeHistoryPage = new RouteViewCore({
+//   key: "/home/history",
+//   title: "播放历史",
+//   component: HomeHistoryPage,
+// });
+// // export const homeMyPage = new RouteViewCore({
+// //   title: "我的",
+// //   component: HomeMyPage,
+// // });
+// export const homeLayout = new RouteViewCore({
+//   key: "/home",
+//   title: "首页",
+//   component: HomeLayout,
+// });
+// export const tvPlayingPage = new RouteViewCore({
+//   key: "/tv_play",
 //   title: "加载中...",
-//   component: OuterPlayersPage,
+//   component: SeasonPlayingPageV2,
 // });
+// export const moviePlayingPage = new RouteViewCore({
+//   key: "/movie_play",
+//   title: "加载中...",
+//   component: MoviePlayingPageV2,
+// });
+// export const test1Page = new RouteViewCore({
+//   key: "/test1",
+//   title: "测试",
+//   component: Test1Page,
+// });
+// // export const outerPlayerPage = new RouteViewCore({
+// //   title: "加载中...",
+// //   component: OuterPlayersPage,
+// // });
 
-export const rootView = new RouteViewCore({
-  key: "/",
-  title: "ROOT",
-  component: "div",
-});
+// export const rootView = new RouteViewCore({
+//   key: "/",
+//   title: "ROOT",
+//   component: "div",
+// });
+import { PageKeys } from "./routes";
+
+export const pages: Omit<Record<PageKeys, any>, "root"> = {
+  "root.home_layout": HomeLayout,
+  "root.home_layout.home_index": HomeIndexPage,
+  "root.home_layout.search": HomeTVSearchPage,
+  "root.home_layout.history": HomeHistoryPage,
+  "root.home_layout.mine": HomeMinePage,
+  "root.season_playing": SeasonPlayingPageV2,
+  "root.movie_playing": MoviePlayingPageV2,
+  "root.notfound": NotFoundPage,
+};

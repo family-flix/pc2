@@ -1,7 +1,7 @@
 import { Handler } from "mitt";
 
 import { BaseDomain } from "@/domains/base";
-import { MenuCore } from "@/domains/ui/menu";
+import { MenuCore, MenuProps } from "@/domains/ui/menu";
 import { MenuItemCore } from "@/domains/ui/menu/item";
 
 enum Events {
@@ -30,15 +30,14 @@ export class DropdownMenuCore extends BaseDomain<TheTypesOfEvents> {
   constructor(
     options: Partial<{
       _name: string;
-      items: MenuItemCore[];
-    }> = {}
+    }> & { items: MenuItemCore[] } & Partial<MenuProps>
   ) {
     super(options);
 
-    const { items = [] } = options;
+    const { items = [], align, side, strategy } = options;
     this.state.items = items;
     this.listenItems(items);
-    this.menu = new MenuCore({ items });
+    this.menu = new MenuCore({ align, side, strategy, items });
     this.menu.onHide(() => {
       // console.log("menu is hidden");
       this.menu.reset();

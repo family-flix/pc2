@@ -1,6 +1,4 @@
-import { Handler } from "mitt";
-
-import { BaseDomain } from "@/domains/base";
+import { Handler, BaseDomain } from "@/domains/base";
 
 enum Events {
   StateChange,
@@ -14,9 +12,7 @@ type TheTypesOfEvents = {
   [Events.Loaded]: void;
   [Events.Error]: void;
 };
-const prefix = window.location.origin;
-// const prefix = "https://img.funzm.com";
-// const DEFAULT_IMAGE1 = prefix + "/placeholder.png";
+
 export enum ImageStep {
   Pending,
   Loading,
@@ -42,6 +38,7 @@ type ImageState = Omit<ImageProps, "scale"> & {
   step: ImageStep;
   scale: number | null;
 };
+let prefix = "";
 
 export class ImageCore extends BaseDomain<TheTypesOfEvents> {
   static url(url?: string | null) {
@@ -52,6 +49,9 @@ export class ImageCore extends BaseDomain<TheTypesOfEvents> {
       return url;
     }
     return prefix + url;
+  }
+  static setPrefix(v: string) {
+    prefix = v;
   }
 
   unique_id: unknown;
@@ -71,10 +71,8 @@ export class ImageCore extends BaseDomain<TheTypesOfEvents> {
       width: this.width,
       height: this.height,
       scale: this.scale,
-      fit: this.fit,
     };
   }
-
   constructor(props: Partial<{}> & ImageProps) {
     super();
 

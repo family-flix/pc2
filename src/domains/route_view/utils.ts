@@ -1,5 +1,5 @@
-import { query_stringify } from "@/utils";
-import { JSONObject } from "@/types";
+import { query_stringify } from "@/utils/index";
+import { JSONObject } from "@/types/index";
 
 export function buildUrl(key: string, params?: JSONObject, query?: Parameters<typeof query_stringify>[0]) {
   const search = (() => {
