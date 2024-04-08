@@ -358,11 +358,13 @@ export function fetchSourcePlayingInfo(body: { id: string; type: MediaResolution
     width: number;
     /** 视频高度 */
     height: number;
+    invalid: number;
     /** 该视频其他分辨率 */
     other: {
       cur: boolean;
       /** 影片分辨率 */
       type: MediaResolutionTypes;
+      invalid: number;
       /** 影片播放地址 */
       url: string;
       /** 影片宽度 */
@@ -379,7 +381,7 @@ export function fetchSourcePlayingInfoProcess(r: TmpRequestResp<typeof fetchSour
   if (r.error) {
     return Result.Err(r.error);
   }
-  const { id, url, width, height, thumbnail_path, type, other, subtitles } = r.data;
+  const { id, url, width, height, thumbnail_path, type, invalid, other, subtitles } = r.data;
   return Result.Ok({
     id,
     url,
@@ -387,14 +389,16 @@ export function fetchSourcePlayingInfoProcess(r: TmpRequestResp<typeof fetchSour
     typeText: MediaResolutionTypeTexts[type],
     width,
     height,
+    invalid,
     thumbnailPath: thumbnail_path,
     resolutions: other.map((t) => {
-      const { cur, url, width, height, type } = t;
+      const { cur, url, width, height, invalid, type } = t;
       return {
         cur,
         url,
         type,
         typeText: MediaResolutionTypeTexts[t.type],
+        invalid,
         width,
         height,
       };

@@ -26,6 +26,7 @@ export function fetchSourcePlayingInfo(body: { id: string; type: MediaResolution
       cur: boolean;
       /** 影片分辨率 */
       type: MediaResolutionTypes;
+      invalid: number;
       /** 影片播放地址 */
       url: string;
       /** 影片宽度 */
@@ -54,12 +55,13 @@ export function fetchSourcePlayingInfoProcess(r: TmpRequestResp<typeof fetchSour
     invalid,
     thumbnailPath: thumbnail_path,
     resolutions: other.map((t) => {
-      const { cur, url, width, height, type } = t;
+      const { cur, url, width, height, invalid, type } = t;
       return {
         cur,
         url,
         type,
         typeText: MediaResolutionTypeTexts[t.type],
+        invalid,
         width,
         height,
       };
