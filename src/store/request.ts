@@ -1,9 +1,13 @@
 import { HttpClientCore } from "@/domains/http_client/index";
 import { connect } from "@/domains/http_client/connect.axios";
 import { Result } from "@/types/index";
+import { __VERSION__ } from "@/constants/index";
 
 const _client = new HttpClientCore({
   hostname: window.location.origin,
+  headers: {
+    'client-version': __VERSION__,
+  }
 });
 connect(_client);
 
