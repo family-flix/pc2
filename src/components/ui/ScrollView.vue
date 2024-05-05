@@ -15,7 +15,8 @@ const props = defineProps<{
 const { store } = props;
 const contentRef = ref<HTMLDivElement | null>(null);
 const state = ref(store.state);
-function handleScroll(event: UIEvent) {
+// @ts-ignore
+function handleScroll(event: Event) {
   const $content = contentRef.value;
   if (!$content) {
     return;
