@@ -13,6 +13,7 @@ import HomeMinePage from "@/pages/home/mine.vue";
 // import TVPlayingPage from "@/pages/tv/play.vue";
 import SeasonPlayingPageV2 from "@/pages/tv/play_v2.vue";
 import MoviePlayingPageV2 from "@/pages/movie/play_v2.vue";
+import UserLoginPage from "@/pages/login/index.vue";
 // import MoviePlayingPage from "@/pages/movie/play.vue";
 // import MoviePlayingPageV2 from "@/pages/movie/play.vue";
 /** 其他 */
@@ -101,5 +102,6 @@ export const pages: Omit<Record<PageKeys, any>, "root"> = {
   "root.home_layout.mine": HomeMinePage,
   "root.season_playing": SeasonPlayingPageV2,
   "root.movie_playing": MoviePlayingPageV2,
+  "root.login": UserLoginPage,
   "root.notfound": NotFoundPage,
 };

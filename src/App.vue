@@ -118,14 +118,24 @@ onMounted(() => {
   // });
   app.onReady(() => {
     // setReady(true);
+    const { pathname, query } = history.$router;
+    const route = routesWithPathname[pathname];
+    console.log("[ROOT]onMount", pathname);
+    if (!route) {
+      history.push("root.notfound");
+      return;
+    }
+    if (!app.$user.isLogin) {
+      if (route.options?.require?.includes("login")) {
+        history.push("root.login");
+        return;
+      }
+    }
     client.appendHeaders({
       Authorization: app.$user.token,
     });
     messageList.init();
-    const { pathname, query } = history.$router;
-    console.log("[ROOT]onMount", pathname);
-    const route = routesWithPathname[pathname];
-    if (route && !history.isLayout(route.name)) {
+    if (!history.isLayout(route.name)) {
       history.push(route.name, query, { ignore: true });
       return;
     }
@@ -133,6 +143,7 @@ onMounted(() => {
   });
   app.onTip((msg) => {
     const { text } = msg;
+    alert(text.join("\n"));
     toast.show({
       texts: text,
     });

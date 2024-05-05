@@ -5,6 +5,9 @@ const configure = {
   root: {
     title: "ROOT",
     pathname: "/",
+    options: {
+      require: [],
+    },
     children: {
       home_layout: {
         title: "首页",
@@ -17,11 +20,15 @@ const configure = {
             show: "",
             hide: "",
           },
+          require: ["login"],
         },
         children: {
           home_index: {
             title: "电视剧",
             pathname: "/home/index",
+            options: {
+              require: ["login"],
+            },
           },
           search: {
             title: "搜索",
@@ -34,11 +41,15 @@ const configure = {
                 show: "fade-in",
                 hide: "fade-out",
               },
+              require: [],
             },
           },
           history: {
             title: "观看记录",
             pathname: "/home/history",
+            options: {
+              require: [],
+            },
           },
           // messages: {
           //   title: "消息",
@@ -66,6 +77,7 @@ const configure = {
                 // show: "slide-in-from-right",
                 // hide: "slide-out-to-right",
               },
+              require: [],
             },
           },
         },
@@ -81,6 +93,7 @@ const configure = {
             show: "slide-in-from-right",
             hide: "slide-out-to-right",
           },
+          require: ["login"],
         },
       },
       movie_playing: {
@@ -88,6 +101,7 @@ const configure = {
         pathname: "/movie_play",
         options: {
           keep_alive: true,
+          require: ["login"],
         },
       },
       // history_updated: {
@@ -97,9 +111,19 @@ const configure = {
       //     keep_alive: true,
       //   },
       // },
+      login: {
+        title: "登录",
+        pathname: "/login",
+        options: {
+          require: [],
+        },
+      },
       notfound: {
         title: "404",
         pathname: "/notfound",
+        options: {
+          require: [],
+        },
       },
     },
   },
@@ -133,6 +157,7 @@ export type RouteConfig = {
       show: string;
       hide: string;
     };
+    require: string[];
   }>;
   // component: unknown;
 };
@@ -143,6 +168,7 @@ type OriginalRouteConfigure = Record<
     pathname: string;
     options?: Partial<{
       keep_alive: boolean;
+      require: string[];
       animation: {
         in: string;
         out: string;

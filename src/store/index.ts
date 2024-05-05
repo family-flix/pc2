@@ -65,6 +65,9 @@ export const app = new Application({
 });
 
 user.onLogin((profile) => {
+  client.appendHeaders({
+    Authorization: user.token,
+  });
   storage.set("user", profile);
 });
 user.onLogout(() => {

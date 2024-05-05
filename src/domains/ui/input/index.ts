@@ -1,4 +1,6 @@
-import { BaseDomain, Handler } from "@/domains/base";
+import { Handler } from "mitt";
+
+import { BaseDomain } from "@/domains/base";
 
 enum Events {
   Change,
@@ -7,26 +9,32 @@ enum Events {
   Focus,
   Blur,
   Enter,
+  Clear,
 }
 type TheTypesOfEvents<T> = {
+  [Events.Change]: T;
   [Events.StateChange]: InputState<T>;
   [Events.Mounted]: void;
-  [Events.Change]: T;
+  [Events.Focus]: void;
   [Events.Blur]: T;
   [Events.Enter]: T;
-  [Events.Focus]: void;
+  [Events.Clear]: void;
 };
 
 type InputProps<T> = {
   /** 字段键 */
-  name?: string;
-  disabled?: boolean;
+  name: string;
+  disabled: boolean;
   defaultValue: T;
-  placeholder?: string;
-  type?: string;
-  onChange?: (v: T) => void;
-  onEnter?: (v: T) => void;
-  onBlur?: (v: T) => void;
+  placeholder: string;
+  type: string;
+  autoFocus: boolean;
+  autoComplete: boolean;
+  onChange: (v: T) => void;
+  onEnter: (v: T) => void;
+  onBlur: (v: T) => void;
+  onClear: () => void;
+  onMounted?: () => void;
 };
 type InputState<T> = {
   value: T;
@@ -34,29 +42,40 @@ type InputState<T> = {
   disabled: boolean;
   loading: boolean;
   type: string;
+  allowClear: boolean;
+  autoFocus: boolean;
+  autoComplete: boolean;
 };
 
 export class InputCore<T> extends BaseDomain<TheTypesOfEvents<T>> {
-  defaultValue: T;
-  value: T;
+  // @ts-ignore
+  _defaultValue: T = "";
+  // @ts-ignore
+  value: T = "";
   placeholder: string;
   disabled: boolean;
+  allowClear: boolean = true;
+  autoComplete: boolean = false;
+  autoFocus: boolean = false;
   type: string;
   loading = false;
-  /** 被消费过的值，用于做比较判断 input 值是否发生改变 */
-  valueUsed: T;
+  // @ts-ignore
+  valueUsed: T = "";
 
-  get state() {
+  get state(): InputState<T> {
     return {
       value: this.value,
       placeholder: this.placeholder,
       disabled: this.disabled,
       loading: this.loading,
       type: this.type,
+      autoComplete: this.autoComplete,
+      autoFocus: this.autoFocus,
+      allowClear: this.allowClear,
     };
   }
 
-  constructor(options: Partial<{ _name: string }> & InputProps<T>) {
+  constructor(options: Partial<{ _name: string } & InputProps<T>> = {}) {
     super(options);
 
     const {
@@ -65,9 +84,13 @@ export class InputCore<T> extends BaseDomain<TheTypesOfEvents<T>> {
       placeholder = "请输入",
       type = "string",
       disabled = false,
+      autoFocus = false,
+      autoComplete = false,
       onChange,
       onBlur,
       onEnter,
+      onClear,
+      onMounted,
     } = options;
     if (name) {
       this._name = name;
@@ -75,26 +98,38 @@ export class InputCore<T> extends BaseDomain<TheTypesOfEvents<T>> {
     this.placeholder = placeholder;
     this.type = type;
     this.disabled = disabled;
-    this.defaultValue = defaultValue;
-    this.value = defaultValue;
-    this.valueUsed = defaultValue;
+    this.autoComplete = autoComplete;
+    if (defaultValue) {
+      this._defaultValue = defaultValue;
+    }
+    if (defaultValue) {
+      this.value = defaultValue;
+    }
     if (onChange) {
       this.onChange(onChange);
     }
     if (onEnter) {
-      this.onEnter(onEnter);
+      this.onEnter(() => {
+        onEnter(this.value);
+      });
     }
     if (onBlur) {
       this.onBlur(onBlur);
+    }
+    if (onClear) {
+      this.onClear(onClear);
+    }
+    if (onMounted) {
+      this.onMounted(onMounted);
     }
   }
   setMounted() {
     this.emit(Events.Mounted);
   }
   handleEnter() {
-    if (this.value === this.valueUsed) {
-      return;
-    }
+    // if (this.value === this.valueUsed) {
+    //   return;
+    // }
     this.valueUsed = this.value;
     this.emit(Events.Enter, this.value);
   }
@@ -111,6 +146,11 @@ export class InputCore<T> extends BaseDomain<TheTypesOfEvents<T>> {
   }
   focus() {
     console.log("请在 connect 中实现该方法");
+  }
+  change(value: T) {
+    this.value = value;
+    this.emit(Events.Change, value);
+    this.emit(Events.StateChange, { ...this.state });
   }
   handleChange(event: unknown) {
     console.log("[DOMAIN]ui/input - handleChange", event);
@@ -141,12 +181,18 @@ export class InputCore<T> extends BaseDomain<TheTypesOfEvents<T>> {
     this.emit(Events.StateChange, { ...this.state });
   }
   clear() {
-    this.value = this.defaultValue;
+    console.log("[COMPONENT]ui/input/index - clear", this._defaultValue);
+    this.value = this._defaultValue;
+    // this.emit(Events.Change, this.value);
+    this.emit(Events.Clear);
     this.emit(Events.StateChange, { ...this.state });
   }
   reset() {
-    this.value = this.defaultValue;
+    this.value = this._defaultValue;
     this.emit(Events.StateChange, { ...this.state });
+  }
+  enter() {
+    this.emit(Events.Enter);
   }
 
   onChange(handler: Handler<TheTypesOfEvents<T>[Events.Change]>) {
@@ -166,6 +212,9 @@ export class InputCore<T> extends BaseDomain<TheTypesOfEvents<T>> {
   }
   onEnter(handler: Handler<TheTypesOfEvents<T>[Events.Enter]>) {
     return this.on(Events.Enter, handler);
+  }
+  onClear(handler: Handler<TheTypesOfEvents<T>[Events.Clear]>) {
+    return this.on(Events.Clear, handler);
   }
 }
 
