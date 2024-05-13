@@ -85,7 +85,8 @@ export const QRCodeWithState = (props: QRCodeWithStateProps) => {
       if (timer === null) {
         return;
       }
-      clearInterval(timer);
+      // @ts-ignore
+      clearInterval(timer as number);
     },
     async check() {
       const r = await $check.run({ code: id });
