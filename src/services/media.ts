@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 
+import { ListResponseWithCursor } from "@/store/types";
 import { UnpackedRequestPayload, request } from "@/domains/request/utils";
 import { FetchParams } from "@/domains/list/typing";
 import {
@@ -9,7 +10,7 @@ import {
   MovieMediaOriginCountryTexts,
   SeasonMediaOriginCountryTexts,
 } from "@/constants/index";
-import { ListResponseWithCursor, RequestedResource, Result } from "@/types/index";
+import { RequestedResource, Result } from "@/types/index";
 
 /**
  * 获取电影列表

@@ -1,21 +1,26 @@
+import dayjs from "dayjs";
+
 import { MediaResolutionTypes } from "@/domains/source/constants";
 import { StorageCore } from "@/domains/storage";
-import dayjs from "dayjs";
+import { AuthCodeStep } from "@/constants/index";
 
 const DEFAULT_CACHE_VALUES = {
   user: {
     id: "",
     username: "anonymous",
     email: "",
-    token: "",
     avatar: "",
+    token: "",
+  },
+  qrcode: {
+    step: AuthCodeStep.Pending,
+    text: "",
   },
   player_settings: {
     rate: 1,
     volume: 0.5,
     type: MediaResolutionTypes.SD,
   },
-  token_id: "",
   tv_search: {
     language: [] as string[],
   },

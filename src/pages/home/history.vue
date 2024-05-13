@@ -62,7 +62,7 @@ helper.init();
 
 <template>
   <ScrollView :store="scroll" class="">
-    <div class="w-[1280px] mx-auto mt-8">
+    <div class="w-[1080px] mx-auto mt-8 2xl:w-[1280px]">
       <div class="text-3xl">观看记录</div>
       <ListView :store="helper" class="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <div v-for="history in response.dataSource" class="cursor-pointer" @click="gotoPlyingPage(history)">

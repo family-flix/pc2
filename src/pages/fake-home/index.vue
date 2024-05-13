@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft } from "lucide-vue-next";
 
-import { ViewComponentProps } from "@/types";
+import { ViewComponentProps } from "@/store/types";
 // import { rootView, test1Page } from "@/store/views";
 
 const { app, view } = defineProps<ViewComponentProps>();

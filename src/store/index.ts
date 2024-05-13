@@ -14,8 +14,9 @@ import { user } from "./user";
 import { storage } from "./storage";
 import { PageKeys, RouteConfig, routes } from "./routes";
 
-NavigatorCore.prefix = "/pc";
+NavigatorCore.prefix = import.meta.env.BASE_URL;
 ImageCore.setPrefix(window.location.origin);
+// console.log(import.meta.env);
 const router = new NavigatorCore();
 const view = new RouteViewCore({
   name: "root" as PageKeys,
@@ -63,7 +64,10 @@ export const app = new Application({
     // return Result.Ok(null);
   },
 });
-
+app.setEnv({
+  prod: import.meta.env.PROD,
+  dev: import.meta.env.DEV,
+});
 user.onLogin((profile) => {
   client.appendHeaders({
     Authorization: user.token,

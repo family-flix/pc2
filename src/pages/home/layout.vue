@@ -152,11 +152,11 @@ view.onCurViewChange((nextCurView) => {
 
 <template>
   <div class="layout flex flex-col w-full h-full bg-gray-100">
-    <div class="w-[1280px] h-[130px] mx-auto">
+    <div class="w-[1080px] h-[130px] mx-auto 2xl:w-[1280px]">
       <div class="top-header-bar py-4 flex items-center justify-between">
         <div class="relative cursor-pointer" @click="clearSearching">
           <div class="z-10 absolute left-2 top-[18px] w-full h-[16px] rounded-md bg-green-500"></div>
-          <div class="z-20 relative text-3xl italic">FunFlixFlim</div>
+          <div class="z-20 relative text-3xl italic">FamilyFlix</div>
         </div>
         <div class="flex items-center space-x-4">
           <div class="relative">
@@ -177,7 +177,7 @@ view.onCurViewChange((nextCurView) => {
                 <div>
                   <div class="text-2xl">系统消息</div>
                 </div>
-                <div class="mt-4">
+                <div class="mt-4 min-h-[320px] min-w-[240px]">
                   <template v-for="(message, index) in messageResponse.dataSource">
                     <div class="py-2 text-lg cursor-pointer" @click="handleClickMessage(message)">
                       {{ message.msg }}
@@ -254,7 +254,7 @@ view.onCurViewChange((nextCurView) => {
           <div class="absolute inset-0 w-full h-full">
             <div class="w-full h-full scrollbar-hide overflow-y-auto bg-white opacity-100 dark:bg-black hide-scroll">
               <ScrollView :store="scroll">
-                <div class="w-[1280px] mx-auto mt-4">
+                <div class="w-[1080px] mx-auto mt-4 2xl:w-[1280px]">
                   <div class="relative p-4 space-y-2 bg-gray-100 rounded-md">
                     <div class="absolute -right-20 top-0">
                       <div

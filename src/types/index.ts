@@ -1,11 +1,4 @@
-import { Component } from "vue";
-// import { Response } from "@list-helper/core/typing";
-
-import { Application } from "@/domains/app";
-// import { BottomMenuCore } from "@/domains/bottom_menu";
 import { BizError } from "@/domains/error";
-import { NavigatorCore } from "@/domains/navigator";
-import { RouteViewCore } from "@/domains/route_view";
 
 export type Resp<T> = {
   data: T extends null ? null : T;
@@ -58,34 +51,32 @@ export type Unpacked<T> = T extends (infer U)[]
   ? U
   : T;
 
-export type BaseApiResp<T> = {
-  code: number;
-  msg: string;
-  data: T;
-};
-
-export type ListResponse<T> = {
-  total: number;
-  page: number;
-  page_size: number;
-  no_more: boolean;
-  list: T[];
-};
-export type ListResponseWithCursor<T> = {
-  page_size: number;
-  total: number;
-  next_marker?: string;
-  list: T[];
-};
+/**
+ * @example
+ * type Shape = MutableRecord<{
+ *   [ShapeType.Square]: Square;
+ *   [ShapeType.Circle]: Circle;
+ * }>;
+ * const shape = {
+ *   type: ShapeType.Square,
+ *   data: {
+ *     // 允许出现 size 而不允许出现 radius
+ *   }
+ * };
+ */
+export type MutableRecord<U> = {
+  [SubType in keyof U]: {
+    type: SubType;
+    data: U[SubType];
+  };
+}[keyof U];
+export type MutableRecord2<U> = {
+  [SubType in keyof U]: {
+    type: SubType;
+  } & U[SubType];
+}[keyof U];
 
 export type RequestedResource<T extends (...args: any[]) => any> = UnpackedResult<Unpacked<ReturnType<T>>>;
-
-export type ViewComponent = (props: ViewComponentProps) => Component | null;
-export type ViewComponentProps = {
-  app: Application;
-  router: NavigatorCore;
-  view: RouteViewCore;
-};
 
 export type Rect = {
   width: number;

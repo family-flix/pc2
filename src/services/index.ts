@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
 
+import { ListResponse, ListResponseWithCursor } from "@/store/types";
 import { FetchParams } from "@/domains/list/typing";
 import { TmpRequestResp, request } from "@/domains/request/utils";
-import { ListResponse, ListResponseWithCursor, RequestedResource, Result, UnpackedResult } from "@/types/index";
+import { RequestedResource, Result, UnpackedResult } from "@/types/index";
 import { MediaTypes, CollectionTypes, ReportTypes } from "@/constants/index";
 import { relative_time_from_now, season_to_chinese_num } from "@/utils/index";
 

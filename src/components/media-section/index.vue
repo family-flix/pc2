@@ -6,6 +6,7 @@ import { MediaItem, fetchMediaList, fetchMediaListProcess } from "@/services/med
 import AspectRatio from "@/components/ui/AspectRatio.vue";
 import LazyImage from "@/components/ui/Image.vue";
 import { ListCoreV2 } from "@/domains/list/v2";
+import { DeviceSizeTypes } from "@/domains/app/index";
 import { getPageSizeByDeviceSize } from "@/domains/list/utils";
 import { RequestCoreV2 } from "@/domains/request/v2";
 import { ImageInListCore } from "@/domains/ui/image";
@@ -29,8 +30,16 @@ const seasonList = new ListCoreV2(
     client,
   }),
   {
-    // pageSize: getPageSizeByDeviceSize(app.curDeviceSize).pageSize,
-    pageSize: 14,
+    pageSize: (() => {
+      const map: Record<DeviceSizeTypes, number> = {
+        sm: 6,
+        md: 12,
+        lg: 12,
+        xl: 14,
+        "2xl": 14,
+      };
+      return map[app.curDeviceSize];
+    })(),
     search: {
       ...params,
     },
@@ -66,7 +75,7 @@ seasonList.init();
         <div>More</div>
       </div> -->
     </div>
-    <div class="grid grid-cols-7 gap-4 mt-4 min-h-[634px]">
+    <div class="grid grid-cols-6 gap-4 mt-4 min-h-[634px] 2xl:grid-cols-7">
       <div
         v-for="media in tvResponse.dataSource"
         class="relative w-[166px] bg-w-bg-2 cursor-pointer"

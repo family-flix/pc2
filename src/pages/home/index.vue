@@ -59,7 +59,7 @@ function gotoPlayingPage(media: { id: string; type: MediaTypes }) {
 
 <template>
   <ScrollView :store="scrollView">
-    <div class="w-[1280px] mx-auto mt-8 pb-8">
+    <div class="w-[1080px] mx-auto mt-8 pb-8 2xl:w-[1280px]">
       <div class="space-y-8">
         <MediaSection
           title="最新影视剧"

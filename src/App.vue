@@ -8,6 +8,7 @@ import { pages } from "./store/views";
 import { client } from "./store/request";
 import { storage } from "./store/storage";
 import StackRouteView from "./components/ui/StackRouteView.vue";
+import Toast from "./components/ui/Toast.vue";
 import { connect as connectApplication } from "./domains/app/connect.web";
 import { connect as connectHistory } from "./domains/history/connect.web";
 import { NavigatorCore } from "./domains/navigator/index";
@@ -143,7 +144,6 @@ onMounted(() => {
   });
   app.onTip((msg) => {
     const { text } = msg;
-    alert(text.join("\n"));
     toast.show({
       texts: text,
     });
@@ -185,6 +185,7 @@ const className = cn(
       ></component>
     </stack-route-view>
   </div>
+  <Toast :store="toast" />
   <!-- <media-check /> -->
 </template>
 

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import { cn } from "@/utils";
-import { InputCore } from "@/domains/ui/input";
 import { DialogCore } from "@/domains/ui/dialog";
 import Presence from "@/components/ui/Presence.vue";
 

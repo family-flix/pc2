@@ -37,7 +37,7 @@ function getCurrentDeviceSize(width: number) {
   return "sm";
 }
 export const MEDIA = "(prefers-color-scheme: dark)";
-type DeviceSizeTypes = keyof typeof mediaSizes;
+export type DeviceSizeTypes = keyof typeof mediaSizes;
 type ThemeTypes = "dark" | "light" | "system";
 
 enum Events {
@@ -116,10 +116,16 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     wechat: boolean;
     ios: boolean;
     android: boolean;
+    prod: boolean;
+    test: boolean;
+    dev: boolean;
   } = {
     wechat: false,
     ios: false,
     android: false,
+    prod: false,
+    test: false,
+    dev: true,
   };
   orientation = OrientationTypes.Vertical;
   curDeviceSize: DeviceSizeTypes = "md";
@@ -206,7 +212,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   setTitle(title: string): void {
     throw new Error("请实现 setTitle 方法");
   }
-  setEnv(env: JSONObject) {
+  setEnv(env: Partial<Application["env"]>) {
     this.env = {
       ...this.env,
       ...env,

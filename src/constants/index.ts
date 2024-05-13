@@ -264,3 +264,12 @@ export enum CollectionTypes {
 }
 
 export const RecentlyYearOptions = [{ label: "2024" }, { label: "2023" }, { label: "2022" }, { label: "2021" }];
+
+export enum AuthCodeStep {
+  Loading = 6,
+  Pending = 1,
+  Scanned = 2,
+  Confirmed = 3,
+  Expired = 4,
+  Error = 5,
+}
