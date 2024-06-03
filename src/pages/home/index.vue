@@ -25,7 +25,7 @@ defineComponent({
   MediaSection,
 });
 
-const scrollView = new ScrollViewCore();
+const scrollView = new ScrollViewCore({});
 // const poster = new ImageInListCore();
 
 // const tvResponse = ref(seasonList.response);

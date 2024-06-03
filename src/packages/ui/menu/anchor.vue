@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineProps } from "vue";
-
 import PopperPrimitiveAnchor from "@/packages/ui/popper/anchor.vue";
 import { MenuCore } from "@/domains/ui";
 

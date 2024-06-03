@@ -1,4 +1,4 @@
-import { Result } from "@/types/index";
+import { Result } from "@/domains/result/index";
 
 import { PlayerCore } from "./index";
 
@@ -179,6 +179,9 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
         // IE/Edge 前缀版
         ($video as any).msRequestFullscreen();
       }
+    },
+    exitFullscreen() {
+      console.log("no");
     },
     showSubtitle() {
       if ($video.textTracks[0]) {

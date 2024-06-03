@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 
 import { ViewComponentProps } from "@/store/types";
 import LazyImage from "@/components/ui/Image.vue";
 import AspectRatio from "@/components/ui/AspectRatio.vue";
-import { ListCoreV2 } from "@/domains/list/v2";
+import { ListCore } from "@/domains/list/index";
 import {
   PlayHistoryItem,
   deleteHistory,
   fetchPlayingHistories,
   fetchPlayingHistoriesProcess,
 } from "@/domains/media/services";
-import { RequestCoreV2 } from "@/domains/request/v2";
+import { RequestCore } from "@/domains/request/index";
 import { DialogCore, ImageInListCore, NodeInListCore, PopoverCore, ScrollViewCore } from "@/domains/ui";
 import { RefCore } from "@/domains/cur";
 import { MediaTypes } from "@/constants";
@@ -20,9 +20,8 @@ const { app, client, history, store } = defineProps<
   { store: PopoverCore } & Pick<ViewComponentProps, "app" | "client" | "history">
 >();
 
-const historyList = new ListCoreV2(
-  new RequestCoreV2({
-    fetch: fetchPlayingHistories,
+const historyList = new ListCore(
+  new RequestCore(fetchPlayingHistories, {
     process: fetchPlayingHistoriesProcess,
     client,
   }),
@@ -30,9 +29,8 @@ const historyList = new ListCoreV2(
     pageSize: 5,
   }
 );
-const deletingRequest = new RequestCoreV2({
+const deletingRequest = new RequestCore(deleteHistory, {
   client,
-  fetch: deleteHistory,
   onLoading(loading) {
     deletingConfirmDialog.okBtn.setLoading(loading);
   },

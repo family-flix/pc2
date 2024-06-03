@@ -1,12 +1,20 @@
-import { Handler } from "mitt";
+import { fetchInfo } from "@/services/index";
+import { BaseDomain, Handler } from "@/domains/base";
+import { RequestCore } from "@/domains/request/index";
+import { HttpClientCore } from "@/domains/http_client/index";
+import { Result } from "@/domains/result/index";
+import { sleep } from "@/utils/index";
 
-import { BaseDomain } from "@/domains/base";
-import { RequestCoreV2 } from "@/domains/request/v2";
-import { HttpClientCore } from "@/domains/http_client";
-import { Result } from "@/types";
-import { sleep } from "@/utils";
-
-import { fetchUserProfile, login, loginWithEmailAndPwd, updateUserAccount, validateMemberToken } from "./services";
+import {
+  fetchUserProfile,
+  login,
+  loginWithEmailAndPwd,
+  registerWithEmailAndPwd,
+  updateUserEmail,
+  updateUserPwd,
+  loginWithTokenId,
+  loginWithWeappCode,
+} from "./services";
 
 export enum Events {
   Tip,
@@ -45,10 +53,8 @@ type UserState = {
 export class UserCore extends BaseDomain<TheTypesOfEvents> {
   static Events = Events;
 
-  _name = "UserCore";
+  unique_id = "UserCore";
   debug = false;
-
-  $client: HttpClientCore;
 
   id: string = "";
   username: string = "Anonymous";
@@ -56,6 +62,10 @@ export class UserCore extends BaseDomain<TheTypesOfEvents> {
   avatar: string = "";
   token: string = "";
   isLogin: boolean = false;
+  permissions: string[] = [];
+
+  $client: HttpClientCore;
+  $profile: RequestCore<typeof fetchInfo>;
 
   get state(): UserState {
     return {
@@ -83,22 +93,16 @@ export class UserCore extends BaseDomain<TheTypesOfEvents> {
         Authorization: token,
       });
     }
-  }
-  logout() {
-    this.username = "Anonymous";
-    this.email = "";
-    this.avatar = "";
-    this.isLogin = false;
-    this.token = "";
-    this.emit(Events.Logout);
+    this.$profile = new RequestCore(fetchInfo, {
+      client: this.$client,
+    });
   }
   /**
-   * 使用 token 登录
+   * 使用 token id 登录
    */
-  async validate(values: Record<string, string>) {
-    const { token, force, tmp } = values;
-    const request = new RequestCoreV2({
-      fetch: validateMemberToken,
+  async loginWithTokenId(values: { token: string; tmp: number }) {
+    const { token, tmp } = values;
+    const request = new RequestCore(loginWithTokenId, {
       client: this.$client,
     });
     const r = await request.run({ token });
@@ -124,19 +128,15 @@ export class UserCore extends BaseDomain<TheTypesOfEvents> {
   /**
    * 使用用户名和密码登录
    */
-  async login(values: { email: string; pwd: string }) {
+  async loginWithEmailAndPwd(values: { email: string; pwd: string }) {
     const { email, pwd } = values;
-    // if (this.isLogin && !force) {
-    //   return Result.Ok(this.state);
-    // }
     if (!email) {
       return Result.Err("请输入邮箱");
     }
     if (!pwd) {
       return Result.Err("请输入密码");
     }
-    const request = new RequestCoreV2({
-      fetch: loginWithEmailAndPwd,
+    const request = new RequestCore(loginWithEmailAndPwd, {
       client: this.$client,
     });
     const r = await request.run({ email, pwd });
@@ -169,40 +169,110 @@ export class UserCore extends BaseDomain<TheTypesOfEvents> {
       token,
     });
   }
-  async fetchProfile() {
-    if (!this.isLogin) {
-      return Result.Err("请先登录");
+  async loginWithWeappCode(values: { code: string }) {
+    const { code } = values;
+    if (!code) {
+      return Result.Err("请传入 code");
     }
-    const request = new RequestCoreV2({
-      fetch: fetchUserProfile,
+    const request = new RequestCore(loginWithWeappCode, {
       client: this.$client,
     });
-    const r = await request.run();
+    const r = await request.run({ code });
     if (r.error) {
-      return r;
+      return Result.Err(r.error.message, 900);
     }
-    return Result.Ok(r.data);
+    this.id = r.data.id;
+    this.email = r.data.email;
+    this.token = r.data.token;
+    this.isLogin = true;
+    this.emit(Events.Login, { ...this.state });
+    return Result.Ok({ ...this.state });
   }
-  async updateAccount(values: { email: string; pwd: string }) {
-    if (!this.isLogin) {
-      return Result.Err("请先登录");
-    }
-    const { email, pwd } = values;
+  /**
+   * 使用用户名和密码注册
+   */
+  async register(values: { email: string; pwd: string; code: string }) {
+    const { email, pwd, code } = values;
     if (!email) {
       return Result.Err("请输入邮箱");
     }
     if (!pwd) {
       return Result.Err("请输入密码");
     }
-    const request = new RequestCoreV2({
-      fetch: updateUserAccount,
+    const request = new RequestCore(registerWithEmailAndPwd, {
       client: this.$client,
     });
-    const r = await request.run(values);
+    const r = await request.run({ email, pwd, code });
+    if (r.error) {
+      return Result.Err(r.error);
+    }
+    this.id = r.data.id;
+    this.email = r.data.email;
+    this.token = r.data.token;
+    this.isLogin = true;
+    this.emit(Events.Login, { ...this.state });
+    return Result.Ok({
+      id: this.id,
+      email: this.email,
+      token: this.token,
+    });
+  }
+  async fetchProfile() {
+    if (!this.isLogin) {
+      return Result.Err("请先登录");
+    }
+    const r = await this.$profile.run();
     if (r.error) {
       return r;
     }
+    const { nickname, email, avatar, permissions } = r.data;
+    this.username = nickname;
+    this.email = email ?? "";
+    this.avatar = avatar ?? "";
+    this.permissions = permissions;
     return Result.Ok(r.data);
+  }
+  async updateEmail(values: { email: string }) {
+    const { email } = values;
+    if (!email) {
+      return Result.Err("请输入邮箱");
+    }
+    const $updateEmailRequest = new RequestCore(updateUserEmail, {
+      client: this.$client,
+    });
+    const r = await $updateEmailRequest.run({ email });
+    if (r.error) {
+      return Result.Err(r.error.message);
+    }
+    this.email = email;
+    this.emit(Events.StateChange, { ...this.state });
+    return Result.Ok({});
+  }
+  async updatePwd(values: { pwd: string }) {
+    const { pwd } = values;
+    if (!pwd) {
+      return Result.Err("请输入密码");
+    }
+    const $updatePwdRequest = new RequestCore(updateUserPwd, {
+      client: this.$client,
+    });
+    const r = await $updatePwdRequest.run({ pwd });
+    if (r.error) {
+      return Result.Err(r.error.message);
+    }
+    this.emit(Events.Logout);
+    return Result.Ok({});
+  }
+  hasPermission(key: string) {
+    return this.permissions.includes(key);
+  }
+  logout() {
+    this.username = "Anonymous";
+    this.email = "";
+    this.avatar = "";
+    this.isLogin = false;
+    this.token = "";
+    this.emit(Events.Logout);
   }
 
   onLogin(handler: Handler<TheTypesOfEvents[Events.Login]>) {

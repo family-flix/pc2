@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineProps } from "vue";
-
 import { MenuCore } from "@/domains/ui/menu/index";
 import MenuPrimitiveSub from "@/packages/ui/menu/sub.vue";
 

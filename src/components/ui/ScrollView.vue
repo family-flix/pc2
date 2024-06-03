@@ -26,14 +26,14 @@ function handleScroll(event: Event) {
     contentHeight: $content.scrollHeight,
   });
   const target = event.currentTarget as HTMLDivElement;
-  store.handleScroll({
-    scrollTop: target.scrollTop,
-  });
+  // store.handleScroll({
+  //   scrollTop: target.scrollTop,
+  // });
 }
 
-store.onStateChange((nextState) => {
-  state.value = nextState;
-});
+// store.onStateChange((nextState) => {
+//   state.value = nextState;
+// });
 onMounted(() => {
   const $content = contentRef.value;
   if (!$content) {

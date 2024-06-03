@@ -1,7 +1,6 @@
 import { Handler, BaseDomain } from "@/domains/base";
 import { HttpClientCore } from "@/domains/http_client/index";
-import { connect } from "@/domains/http_client/connect.axios";
-import { Result } from "@/types/index";
+import { Result } from "@/domains/result/index";
 import { MediaOriginCountry } from "@/constants/index";
 
 import { parseSubtitleContent, parseSubtitleUrl, timeStrToSeconds } from "./utils";
@@ -27,12 +26,10 @@ type SubtitleState = {
 export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
   static async New(
     subtitle: { id: string; type: SubtitleFileTypes; url: string; name: string; language: MediaOriginCountry[] },
-    extra: { currentTime?: number }
+    extra: { currentTime?: number; client: HttpClientCore }
   ) {
     const { id, name, type, url, language } = subtitle;
-    // const { client } = extra;
-    const client = new HttpClientCore({});
-    connect(client);
+    const { client } = extra;
     const content_res = await (async () => {
       if (type === SubtitleFileTypes.MediaInnerFile) {
         const r = await (async () => {

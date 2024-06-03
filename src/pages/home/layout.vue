@@ -3,7 +3,8 @@ import { ref, defineComponent } from "vue";
 import { Home, Film, History, Bell, ChevronDown, User } from "lucide-vue-next";
 
 import { messageList } from "@/store/index";
-import { PageKeys, ViewComponentProps } from "@/store/types";
+import { PageKeys } from "@/store/routes";
+import { ViewComponentProps } from "@/store/types";
 import { MediaItem, fetchMediaList, fetchMediaListProcess } from "@/services/media";
 import ScrollView from "@/components/ui/ScrollView.vue";
 import ListView from "@/components/ui/ListView.vue";
@@ -16,8 +17,8 @@ import HistoryPanel from "@/components/history-panel/index.vue";
 import { RouteViewCore } from "@/domains/route_view";
 import KeepAliveView from "@/components/ui/KeepAliveView.vue";
 import DropdownMenu from "@/components/ui/dropdown-menu/index.vue";
-import { ListCoreV2 } from "@/domains/list/v2";
-import { RequestCoreV2 } from "@/domains/request/v2";
+import { ListCore } from "@/domains/list/index";
+import { RequestCore } from "@/domains/request/index";
 import {
   ButtonCore,
   DropdownMenuCore,
@@ -36,9 +37,8 @@ defineComponent({
   },
 });
 
-const helper = new ListCoreV2(
-  new RequestCoreV2({
-    fetch: fetchMediaList,
+const helper = new ListCore(
+  new RequestCore(fetchMediaList, {
     process: fetchMediaListProcess,
     client,
   }),
@@ -80,7 +80,7 @@ const searchBtn = new ButtonCore({
     helper.search({ name: nameInput.value });
   },
 });
-const scroll = new ScrollViewCore();
+const scroll = new ScrollViewCore({});
 const poster = new ImageInListCore();
 const messageDropdown = new PopoverCore({
   align: "start",

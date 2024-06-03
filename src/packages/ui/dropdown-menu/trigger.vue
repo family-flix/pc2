@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 
 import { DropdownMenuCore } from "@/domains/ui/dropdown-menu";
 import MenuPrimitiveAnchor from "@/packages/ui/menu/anchor.vue";

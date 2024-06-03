@@ -22,7 +22,7 @@ onMounted(() => {
   }
   // console.log("[COMPONENT]stack-route-view - useEffect");
   store.setMounted();
-  store.showed();
+  store.setShow();
   return () => {
     store.setUnmounted();
   };

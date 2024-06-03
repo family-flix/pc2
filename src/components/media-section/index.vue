@@ -5,10 +5,10 @@ import { ViewComponentProps } from "@/store/types";
 import { MediaItem, fetchMediaList, fetchMediaListProcess } from "@/services/media";
 import AspectRatio from "@/components/ui/AspectRatio.vue";
 import LazyImage from "@/components/ui/Image.vue";
-import { ListCoreV2 } from "@/domains/list/v2";
+import { ListCore } from "@/domains/list/index";
 import { DeviceSizeTypes } from "@/domains/app/index";
 import { getPageSizeByDeviceSize } from "@/domains/list/utils";
-import { RequestCoreV2 } from "@/domains/request/v2";
+import { RequestCore } from "@/domains/request/index";
 import { ImageInListCore } from "@/domains/ui/image";
 import { MediaTypes } from "@/constants/index";
 
@@ -23,9 +23,8 @@ defineComponent({
   AspectRatio,
 });
 
-const seasonList = new ListCoreV2(
-  new RequestCoreV2({
-    fetch: fetchMediaList,
+const seasonList = new ListCore(
+  new RequestCore(fetchMediaList, {
     process: fetchMediaListProcess,
     client,
   }),

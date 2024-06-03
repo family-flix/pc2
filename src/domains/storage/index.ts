@@ -1,4 +1,4 @@
-import debounce from "lodash/fp/debounce";
+import { debounce } from "@/utils/lodash/debounce";
 
 import { BaseDomain, Handler } from "@/domains/base";
 
@@ -50,7 +50,7 @@ export class StorageCore<T extends Record<string, unknown>> extends BaseDomain<T
 
   get<K extends keyof T>(key: K, defaultValue?: T[K]) {
     const v = this.values[key];
-    console.log("[DOMAIN]storage/index - get", key, v, this.values);
+    // console.log("[DOMAIN]storage/index - get", key, v, this.values);
     if (v === undefined) {
       if (defaultValue) {
         // @ts-ignore
@@ -70,12 +70,20 @@ export class StorageCore<T extends Record<string, unknown>> extends BaseDomain<T
     this.client.setItem(this.key, JSON.stringify(this.values));
     this.emit(Events.StateChange, { ...this.state });
   }) as (key: keyof T, value: unknown) => void;
-
-  merge = <K extends keyof T>(key: K, values: Partial<T[K]>) => {
+  merge = <K extends keyof T>(
+    key: K,
+    values: Partial<T[K]>,
+    extra: Partial<{ reverse: boolean; limit: number }> = {}
+  ) => {
     // console.log("[]merge", key, values);
     const prevValues = this.get(key) || {};
     if (Array.isArray(prevValues)) {
-      const nextValues = [...prevValues, ...(values as unknown as Array<unknown>)];
+      let nextValues = extra.reverse
+        ? [...(values as unknown as Array<unknown>), ...prevValues]
+        : [...prevValues, ...(values as unknown as Array<unknown>)];
+      if (extra.limit) {
+        nextValues = nextValues.slice(0, extra.limit);
+      }
       this.set(key, nextValues);
       return nextValues;
     }

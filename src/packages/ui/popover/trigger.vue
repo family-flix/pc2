@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 
 import PopperPrimitiveTrigger from "@/packages/ui/popper/anchor.vue";
 import { PopoverCore } from "@/domains/ui/popover/index";

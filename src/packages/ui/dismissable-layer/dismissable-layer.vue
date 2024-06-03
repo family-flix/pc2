@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DismissableLayerCore } from "@/domains/ui";
-import { ref, defineProps, onUnmounted, onMounted } from "vue";
+import { ref,  onUnmounted, onMounted } from "vue";
 
 const { store } = defineProps<{ store: DismissableLayerCore }>();
 const el = ref<HTMLDivElement>();

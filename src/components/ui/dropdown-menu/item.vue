@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 
 import { ChevronRight } from "lucide-vue-next";
 
@@ -13,12 +13,12 @@ import DropdownMenuPrimitivePortal from "@/packages/ui/dropdown-menu/portal.vue"
 import DropdownMenuPrimitiveSubContent from "@/packages/ui/dropdown-menu/sub-content.vue";
 import { cn } from "@/utils/index";
 
-const { store: item, subMenu } = defineProps<{ store: MenuItemCore; subMenu: MenuCore }>();
+const { store: menuItem, subMenu } = defineProps<{ store: MenuItemCore; subMenu: MenuCore }>();
 
-const itemState = ref(item.state);
+const itemState = ref(menuItem.state);
 const state = ref(subMenu.state);
 
-item.onStateChange((nextState) => {
+menuItem.onStateChange((nextState) => {
   itemState.value = nextState;
 });
 subMenu.onStateChange((nextState) => {
@@ -33,7 +33,7 @@ const { label } = itemState.value;
   <DropdownMenuPrimitiveSub :store="subMenu" class-name="dropdown-menu__sub">
     <DropdownMenuPrimitiveSubTrigger
       class-name="flex cursor-default select-none items-center rounded-sm py-1.5 px-2 text-sm font-medium outline-none focus:bg-slate-100 data-[highlighted]:bg-slate-100 data-[state=open]:bg-slate-100 dark:focus:bg-slate-700 dark:data-[state=open]:bg-slate-700"
-      :store="item"
+      :store="menuItem"
     >
       {{ label }}
       <div class="ml-auto h-4 w-4">

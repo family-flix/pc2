@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 
 import PopperPrimitiveContent from "@/packages/ui/popper/content.vue";
 import DismissableLayer from "@/packages/ui/dismissable-layer/dismissable-layer.vue";

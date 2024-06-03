@@ -207,7 +207,7 @@ export const MovieGenresOptions = MovieMediaGenres.map((text) => {
 
 export enum ReportTypes {
   /** 电视剧问题 */
-  TV,
+  Season,
   /** 电影问题 */
   Movie,
   /** 问题与建议 */
@@ -215,8 +215,8 @@ export enum ReportTypes {
   /** 想看什么剧 */
   Want,
 }
-export const TVReportList = ["信息有误", "无法播放", "重复", "缺少字幕", "集/季数不全"];
-export const MovieReportList = ["信息有误", "无法播放", "重复", "缺少字幕"];
+export const SeasonReportList = ["信息有误", "无法播放", "分辨率太低", "重复", "缺少字幕", "集/季数不全"];
+export const MovieReportList = ["信息有误", "无法播放", "分辨率太低", "重复", "缺少字幕"];
 export const CommonReportList = [""];
 
 export enum MediaTypes {
@@ -261,6 +261,20 @@ export enum CollectionTypes {
   DailyUpdate = 2,
   /** 每日更新草稿 */
   DailyUpdateDraft = 3,
+  /** 每日更新存档 */
+  DailyUpdateArchive = 4,
+  /** 手动创建的排行榜 */
+  ManuallyRank = 5,
+  /** 影视剧排行榜 */
+  ThirdPlatformRank = 6,
+  /** 豆瓣电视剧排行 */
+  DoubanSeasonRank = 7,
+  /** 豆瓣电影排行 */
+  DoubanMovieRank = 8,
+  /** 猫眼电视剧排行 */
+  MaoyaoSeasonRank = 9,
+  /** 猫眼电影排行 */
+  MaoyaoMovieRank = 10,
 }
 
 export const RecentlyYearOptions = [{ label: "2024" }, { label: "2023" }, { label: "2022" }, { label: "2021" }];

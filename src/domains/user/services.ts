@@ -1,5 +1,4 @@
-import { request } from "@/domains/request/utils";
-import { AuthCodeStep } from "@/constants/index";
+import { media_request } from "@/biz/requests/index";
 
 /**
  * 用户登录
@@ -7,7 +6,7 @@ import { AuthCodeStep } from "@/constants/index";
  * @returns
  */
 export function login(body: { email: string; password: string }) {
-  return request.post<{
+  return media_request.post<{
     id: string;
     username: string;
     name: string;
@@ -20,11 +19,11 @@ export function login(body: { email: string; password: string }) {
 }
 
 export function logout(body: { email: string; password: string }) {
-  return request.post("/api/user/logout", body);
+  return media_request.post("/api/user/logout", body);
 }
 
 export function get_token() {
-  return request.post("/api/token", {});
+  return media_request.post("/api/token", {});
 }
 
 /**
@@ -32,34 +31,69 @@ export function get_token() {
  * @returns
  */
 export function fetchUserProfile() {
-  return request.post("/api/v2/wechat/user/profile");
+  return media_request.post<{
+    id: string;
+    nickname: string;
+    email: string | null;
+    avatar: string | null;
+    permissions: string[];
+  }>("/api/v2/wechat/user/profile");
 }
 
 /**
- * 获取当前登录用户信息详情
+ * 更新邮箱
  * @returns
  */
-export function updateUserAccount(values: { email: string; pwd: string }) {
-  return request.post<void>("/api/v2/wechat/mine/update_account", values);
+export function updateUserEmail(values: { email: string }) {
+  return media_request.post<void>("/api/v2/wechat/mine/update_email", values);
+}
+
+/**
+ * 更新密码
+ * @returns
+ */
+export function updateUserPwd(values: { pwd: string }) {
+  return media_request.post<void>("/api/v2/wechat/mine/update_pwd", values);
 }
 
 /**
  * 成员通过授权链接访问首页时，验证该链接是否有效
  */
-export function validateMemberToken(v: { token: string }) {
-  return request.post<{ id: string; email: string; token: string }>("/api/validate", {
+export function loginWithTokenId(v: { token: string }) {
+  return media_request.post<{ id: string; email: string; token: string }>("/api/validate", {
     token: v.token,
   });
 }
 
 /**
- * 成员通过授权链接访问首页时，验证该链接是否有效
+ * 使用小程序 code 登录
+ */
+export function loginWithWeappCode(values: { code: string }) {
+  const { code } = values;
+  return media_request.post<{ id: string; email: string; token: string }>("/api/v2/wechat/auth/weapp", {
+    code,
+  });
+}
+
+/**
+ * 使用邮箱、密码登录
  */
 export function loginWithEmailAndPwd(values: { email: string; pwd: string }) {
   const { email, pwd } = values;
-  return request.post<{ token: string; id: string }>("/api/v2/wechat/auth/login", {
+  return media_request.post<{ id: string; email: string; token: string }>("/api/v2/wechat/auth/login", {
     email,
     pwd,
   });
 }
 
+/**
+ * 使用邮箱、密码注册
+ */
+export function registerWithEmailAndPwd(values: { email: string; pwd: string; code: string }) {
+  const { email, pwd, code } = values;
+  return media_request.post<{ id: string; email: string; token: string }>("/api/v2/wechat/auth/register", {
+    email,
+    pwd,
+    code,
+  });
+}

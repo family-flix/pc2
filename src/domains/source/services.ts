@@ -1,6 +1,8 @@
-import { TmpRequestResp, request } from "@/domains/request/utils";
+import { media_request } from "@/biz/requests/index";
+import { TmpRequestResp } from "@/domains/request/utils";
 import { SubtitleFileResp } from "@/domains/subtitle/types";
-import { Result, Unpacked, UnpackedResult } from "@/types";
+import { Unpacked, UnpackedResult } from "@/types";
+import { Result } from "@/domains/result/index";
 
 import { MediaResolutionTypeTexts, MediaResolutionTypes } from "./constants";
 
@@ -8,7 +10,7 @@ import { MediaResolutionTypeTexts, MediaResolutionTypes } from "./constants";
  * 获取视频源播放信息
  */
 export function fetchSourcePlayingInfo(body: { id: string; type: MediaResolutionTypes }) {
-  return request.post<{
+  return media_request.post<{
     id: string;
     /** 缩略图 */
     thumbnail_path: string;
@@ -26,7 +28,6 @@ export function fetchSourcePlayingInfo(body: { id: string; type: MediaResolution
       cur: boolean;
       /** 影片分辨率 */
       type: MediaResolutionTypes;
-      invalid: number;
       /** 影片播放地址 */
       url: string;
       /** 影片宽度 */
@@ -55,13 +56,12 @@ export function fetchSourcePlayingInfoProcess(r: TmpRequestResp<typeof fetchSour
     invalid,
     thumbnailPath: thumbnail_path,
     resolutions: other.map((t) => {
-      const { cur, url, width, height, invalid, type } = t;
+      const { cur, url, width, height, type } = t;
       return {
         cur,
         url,
         type,
         typeText: MediaResolutionTypeTexts[t.type],
-        invalid,
         width,
         height,
       };

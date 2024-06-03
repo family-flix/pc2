@@ -41,7 +41,7 @@ export type MenuProps = {
 };
 
 export class MenuCore extends BaseDomain<TheTypesOfEvents> {
-  _name = "MenuCore";
+  unique_id = "MenuCore";
   debug = true;
 
   popper: PopperCore;

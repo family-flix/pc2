@@ -19,7 +19,7 @@ store.onStateChange((nextState) => {
 
 <template>
   <template v-if="state.mounted">
-    <div :class="props.class" role="presentation" :data-state="state.open ? 'open' : 'closed'">
+    <div :class="props.class" role="presentation" :data-state="state.visible ? 'open' : 'closed'">
       <slot></slot>
     </div>
   </template>

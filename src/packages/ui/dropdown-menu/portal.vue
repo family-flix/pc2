@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 
 import MenuPrimitivePortal from "@/packages/ui/menu/portal.vue";
 import { MenuCore } from "@/domains/ui";

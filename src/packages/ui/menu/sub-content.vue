@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 
 import Presence from "@/packages/ui/presence/presence.vue";
 import { MenuCore } from "@/domains/ui/menu/index";

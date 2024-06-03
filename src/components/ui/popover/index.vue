@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 import { X } from "lucide-vue-next";
 
 import PopoverPrimitiveRoot from "@/packages/ui/popover/root.vue";

@@ -1,8 +1,8 @@
-import { request } from "@/domains/request/utils";
+import { media_request } from "@/biz/requests/index";
 import { AuthCodeStep } from "@/constants/index";
 
 export function createAuthQRCode() {
-  return request.post<{ step: AuthCodeStep; code: string }>("/api/v2/wechat/auth/code/create", {});
+  return media_request.post<{ step: AuthCodeStep; code: string }>("/api/v2/wechat/auth/code/create", {});
 }
 
 type MutableRecord<U> = {
@@ -35,5 +35,5 @@ type QRCodeResp = MutableRecord<{
   };
 }>;
 export function checkAuthQRCode(values: { code: string }) {
-  return request.post<QRCodeResp>("/api/v2/wechat/auth/code/check", values);
+  return media_request.post<QRCodeResp>("/api/v2/wechat/auth/code/check", values);
 }

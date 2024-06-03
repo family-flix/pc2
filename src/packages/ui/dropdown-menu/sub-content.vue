@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 
 import MenuPrimitiveSubContent from "@/packages/ui/menu/sub-content.vue";
 import { MenuCore } from "@/domains/ui";

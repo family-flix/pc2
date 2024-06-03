@@ -9,14 +9,13 @@ import { ListCore } from "@/domains/list";
 import { cn } from "@/utils";
 
 import Show from "./Show.vue";
-import { ListCoreV2 } from "@/domains/list/v2";
 
 defineComponent({
   show: Show,
 });
 const props = defineProps<{
   class?: string;
-  store: ListCore<any, any> | ListCoreV2<any, any>;
+  store: ListCore<any, any>;
 }>();
 const { store } = props;
 const response = ref(store.response);

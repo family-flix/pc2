@@ -3,8 +3,12 @@
  */
 
 import { BaseDomain, Handler } from "@/domains/base";
-import { UserCore } from "@/domains/user";
-import { JSONObject, Result } from "@/types";
+import { UserCore } from "@/domains/user/index";
+import { StorageCore } from "@/domains/storage/index";
+import { JSONObject } from "@/types/index";
+import { Result } from "@/domains/result/index";
+
+import { ThemeTypes } from "./types";
 
 export enum OrientationTypes {
   Horizontal = "horizontal",
@@ -38,7 +42,6 @@ function getCurrentDeviceSize(width: number) {
 }
 export const MEDIA = "(prefers-color-scheme: dark)";
 export type DeviceSizeTypes = keyof typeof mediaSizes;
-type ThemeTypes = "dark" | "light" | "system";
 
 enum Events {
   Tip,
@@ -87,8 +90,9 @@ type ApplicationState = {
   theme: ThemeTypes;
   deviceSize: DeviceSizeTypes;
 };
-type ApplicationProps = {
+type ApplicationProps<T extends { storage: StorageCore<any> }> = {
   user: UserCore;
+  storage: T["storage"];
   // history: HistoryCore;
   /**
    * 应用加载前的声明周期，只有返回 Result.Ok() 页面才会展示内容
@@ -97,15 +101,21 @@ type ApplicationProps = {
   onReady?: () => void;
 };
 
-export class Application extends BaseDomain<TheTypesOfEvents> {
+export class Application<T extends { storage: StorageCore<any> }> extends BaseDomain<TheTypesOfEvents> {
   /** 用户 */
   $user: UserCore;
-  // $history: HistoryCore;
+  $storage: T["storage"];
 
-  lifetimes: Pick<ApplicationProps, "beforeReady" | "onReady">;
+  lifetimes: Pick<ApplicationProps<T>, "beforeReady" | "onReady">;
 
   ready = false;
   screen: {
+    statusBarHeight?: number;
+    menuButton?: {
+      width: number;
+      left: number;
+      right: number;
+    };
     width: number;
     height: number;
   } = {
@@ -116,16 +126,16 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     wechat: boolean;
     ios: boolean;
     android: boolean;
-    prod: boolean;
-    test: boolean;
-    dev: boolean;
+    pc: boolean;
+    weapp: boolean;
+    prod: "develop" | "trial" | "release";
   } = {
     wechat: false,
     ios: false,
     android: false,
-    prod: false,
-    test: false,
-    dev: true,
+    pc: false,
+    weapp: false,
+    prod: "develop",
   };
   orientation = OrientationTypes.Vertical;
   curDeviceSize: DeviceSizeTypes = "md";
@@ -145,12 +155,13 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     };
   }
 
-  constructor(props: ApplicationProps) {
+  constructor(props: ApplicationProps<T>) {
     super();
 
-    const { user: user, beforeReady, onReady } = props;
+    const { user, storage, beforeReady, onReady } = props;
 
     this.$user = user;
+    this.$storage = storage;
 
     this.lifetimes = {
       beforeReady,
@@ -160,9 +171,9 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   /** 启动应用 */
   async start(size: { width: number; height: number }) {
     const { width, height } = size;
-    this.screen = { width, height };
+    this.screen = { ...this.screen, width, height };
     this.curDeviceSize = getCurrentDeviceSize(width);
-    console.log("[Application]start");
+    // console.log('[Application]start');
     const { beforeReady } = this.lifetimes;
     if (beforeReady) {
       const r = await beforeReady();
@@ -184,11 +195,28 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
     }
     // If theme is system, resolve it before setting theme
     if (theme === "system") {
-      resolved = this.getSystemTheme();
+      const r = this.getSystemTheme();
+      if (r.error) {
+        return;
+      }
+      resolved = r.data;
     }
   }
-  applyTheme() {
-    throw new Error("请在 connect.web 中实现 applyTheme 方法");
+  /** 应用指定主题 */
+  applyTheme(theme: ThemeTypes) {
+    const tip = "请在 connect.web 中实现 applyTheme 方法";
+    console.warn(tip);
+    return Result.Err(tip);
+  }
+  getTheme() {
+    const tip = "请在 connect.web 中实现 getTheme 方法";
+    console.warn(tip);
+    return Result.Err(tip);
+  }
+  getSystemTheme(e?: any): Result<string> {
+    const tip = "请在 connect.web 中实现 getSystemTheme 方法";
+    console.warn(tip);
+    return Result.Err(tip);
   }
   // push(...args: Parameters<HistoryCore["push"]>) {
   //   return this.$history.push(...args);
@@ -212,7 +240,7 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   setTitle(title: string): void {
     throw new Error("请实现 setTitle 方法");
   }
-  setEnv(env: Partial<Application["env"]>) {
+  setEnv(env: JSONObject) {
     this.env = {
       ...this.env,
       ...env,
@@ -222,11 +250,8 @@ export class Application extends BaseDomain<TheTypesOfEvents> {
   copy(text: string) {
     throw new Error("请实现 copy 方法");
   }
-  getComputedStyle(el: HTMLElement): CSSStyleDeclaration {
+  getComputedStyle(el: unknown): {} {
     throw new Error("请实现 getComputedStyle 方法");
-  }
-  getSystemTheme(e?: any): string {
-    return "";
   }
   /** 发送推送 */
   notify(msg: { title: string; body: string }) {

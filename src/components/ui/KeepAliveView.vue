@@ -23,7 +23,7 @@ onUnmounted(() => {
 });
 
 store.onStateChange((nextState) => {
-  console.log("view state change", store._name, nextState);
+  console.log("view state change", store.unique_id, nextState);
   state.value = nextState;
 });
 

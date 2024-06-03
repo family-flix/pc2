@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, onMounted, ref } from "vue";
+import {  onMounted, ref } from "vue";
 
 import { PopperCore } from "@/domains/ui/popper";
 import { cn } from "@/utils";

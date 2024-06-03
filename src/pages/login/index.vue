@@ -32,7 +32,7 @@ function Page(props: ViewComponentProps) {
         pwd: $password.value,
       };
       $login.setLoading(true);
-      const r = await app.$user.login(values);
+      const r = await app.$user.loginWithEmailAndPwd(values);
       $login.setLoading(false);
       if (r.error) {
         app.tip({
@@ -101,7 +101,7 @@ onMounted(async () => {
   }
   $page.$code.startCheck();
   const hostname = (() => {
-    if (props.app.env.dev) {
+    if (props.app.env.prod === "develop") {
       return "https://media-t.funzm.com";
     }
     return "https://media.funzm.com";

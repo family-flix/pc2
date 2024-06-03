@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 
 import Presence from "@/packages/ui/presence/presence.vue";
 import { ToastCore } from "@/domains/ui/toast/index";

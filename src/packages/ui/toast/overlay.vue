@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 
 import { ToastCore } from "@/domains/ui/toast";
 import { cn } from "@/utils/index";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import { ref } from "vue";
 
 import { DropdownMenuCore } from "@/domains/ui/dropdown-menu";
 import MenuPrimitiveRoot from "@/packages/ui/menu/root.vue";

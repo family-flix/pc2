@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, defineComponent } from "vue";
 
-import { PageKeys } from "./store/types";
+import { PageKeys } from "./store/routes";
 import { messageList, history, app } from "./store/index";
 import { routesWithPathname } from "./store/routes";
 import { pages } from "./store/views";
@@ -13,7 +13,6 @@ import { connect as connectApplication } from "./domains/app/connect.web";
 import { connect as connectHistory } from "./domains/history/connect.web";
 import { NavigatorCore } from "./domains/navigator/index";
 import { DialogCore, ToastCore } from "./domains/ui/index";
-import { MediaOriginCountry } from "./constants/index";
 import { cn } from "./utils/index";
 
 // import MediaCheck from "./components/MediaCheck.vue";

@@ -1,7 +1,7 @@
 import { BaseDomain, Handler, base } from "@/domains/base";
 import { HttpClientCore } from "@/domains/http_client/index";
-import { RequestCoreV2 } from "@/domains/request/v2";
-import { Result } from "@/types/index";
+import { RequestCore } from "@/domains/request/index";
+import { Result } from "@/domains/result";
 import { AuthCodeStep } from "@/constants/index";
 
 import { createAuthQRCode, checkAuthQRCode } from "./services";
@@ -24,12 +24,10 @@ export const QRCodeWithState = (props: QRCodeWithStateProps) => {
   let timer: null | NodeJS.Timer = null;
   let error: null | Error = null;
 
-  const $check = new RequestCoreV2({
-    fetch: checkAuthQRCode,
+  const $check = new RequestCore(checkAuthQRCode, {
     client,
   });
-  const $create = new RequestCoreV2({
-    fetch: createAuthQRCode,
+  const $create = new RequestCore(createAuthQRCode, {
     client,
   });
 

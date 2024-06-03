@@ -2,14 +2,14 @@
 /**
  * @file 电视剧搜索
  */
-import { defineProps, defineComponent, ref } from "vue";
+import {  defineComponent, ref } from "vue";
 
 import { MediaItem, fetchMediaList, fetchMediaListProcess } from "@/services/media";
 // import { LazyImage } from "@/components/ui/image";
 import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
-import { RequestCoreV2 } from "@/domains/request/v2";
-import { ListCoreV2 } from "@/domains/list/v2";
+import { RequestCore } from "@/domains/request/index";
+import { ListCore } from "@/domains/list/index";
 import { ButtonCore } from "@/domains/ui/button";
 import { InputCore } from "@/domains/ui/input";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
@@ -21,9 +21,8 @@ import { ViewComponentProps } from "@/store/types";
 
 const { view, client } = defineProps<ViewComponentProps>();
 
-const helper = new ListCoreV2(
-  new RequestCoreV2({
-    fetch: fetchMediaList,
+const helper = new ListCore(
+  new RequestCore(fetchMediaList, {
     process: fetchMediaListProcess,
     client,
   })
@@ -40,7 +39,7 @@ const searchBtn = new ButtonCore({
     helper.search({ name: nameInput.value });
   },
 });
-const scroll = new ScrollViewCore();
+const scroll = new ScrollViewCore({});
 const poster = new ImageInListCore();
 
 // const [response, helper] = useHelper<PartialSearchedTV>(fetch_tv_list);

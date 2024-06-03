@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, onMounted, onUnmounted, ref } from "vue";
+import {  onMounted, onUnmounted, ref } from "vue";
 
 import ItemImpl from "./item-impl.vue";
 import Anchor from "./anchor.vue";

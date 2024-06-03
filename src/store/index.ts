@@ -1,22 +1,33 @@
 import { fetchInfo, fetchNotifications, fetchNotificationsProcess } from "@/services/index";
 import { Application } from "@/domains/app/index";
-import { ListCoreV2 } from "@/domains/list/v2";
+import { ListCore } from "@/domains/list/index";
 import { NavigatorCore } from "@/domains/navigator/index";
 import { RouteViewCore } from "@/domains/route_view/index";
+import { RouteConfig } from "@/domains/route_view/utils";
 import { HistoryCore } from "@/domains/history/index";
-import { RequestCoreV2 } from "@/domains/request/v2";
-import { ListCore } from "@/domains/list/index";
+import { onCreate as onCreateScrollView } from "@/domains/ui/scroll-view";
+import { RequestCore, onCreate as onCreateRequest } from "@/domains/request/index";
 import { ImageCore } from "@/domains/ui/index";
-import { Result } from "@/types/index";
+import { Result } from "@/domains/result/index";
 
 import { client } from "./request";
 import { user } from "./user";
 import { storage } from "./storage";
-import { PageKeys, RouteConfig, routes } from "./routes";
+import { PageKeys, routes } from "./routes";
 
 NavigatorCore.prefix = import.meta.env.BASE_URL;
 ImageCore.setPrefix(window.location.origin);
-// console.log(import.meta.env);
+
+onCreateRequest((ins) => {
+  ins.onFailed((e) => {
+    app.tip({
+      text: [e.message],
+    });
+  });
+  ins.client = client;
+});
+onCreateScrollView((ins) => ins.os === app.env);
+
 const router = new NavigatorCore();
 const view = new RouteViewCore({
   name: "root" as PageKeys,
@@ -26,7 +37,8 @@ const view = new RouteViewCore({
   parent: null,
   views: [],
 });
-export const history = new HistoryCore<PageKeys, RouteConfig>({
+view.isRoot = true;
+export const history = new HistoryCore<PageKeys, RouteConfig<PageKeys>>({
   view,
   router,
   routes,
@@ -36,8 +48,10 @@ export const history = new HistoryCore<PageKeys, RouteConfig>({
 });
 export const app = new Application({
   user,
+  storage,
   async beforeReady() {
-    await user.validate(router.query);
+    const {} = router.query;
+    await user.loginWithTokenId({ token: router.query.token, tmp: Number(router.query.tmp) });
     if (!user.isLogin) {
       // app.emit(Application.Events.Error, new Error("请先登录"));
       return Result.Ok(null);
@@ -92,9 +106,8 @@ user.onNeedUpdate(() => {
   app.tipUpdate();
 });
 
-export const messageList = new ListCoreV2(
-  new RequestCoreV2({
-    fetch: fetchNotifications,
+export const messageList = new ListCore(
+  new RequestCore(fetchNotifications, {
     process: fetchNotificationsProcess,
     client: client,
   }),
@@ -104,12 +117,11 @@ export const messageList = new ListCoreV2(
     },
   }
 );
-export const infoRequest = new RequestCoreV2({
-  fetch: fetchInfo,
-  client: client,
+export const infoRequest = new RequestCore(fetchInfo, {
+  client,
 });
 
-ListCore.commonProcessor = ListCoreV2.commonProcessor = <T>(
+ListCore.commonProcessor = <T>(
   originalResponse: any
 ): {
   dataSource: T[];

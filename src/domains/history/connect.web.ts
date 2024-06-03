@@ -1,4 +1,4 @@
-import { HistoryCore } from "./index";
+import { HistoryCore } from "@/domains/history";
 
 const ownerDocument = globalThis.document;
 
@@ -46,20 +46,9 @@ export function connect(history: HistoryCore<string, any>) {
     history.handleClickLink({ href, target: null });
   });
   window.addEventListener("popstate", (event) => {
+    console.log("[DOMAIN]history/connect - window.addEventListener('popstate'", event.state?.from, event.state?.to);
     const { type } = event;
     const { pathname, href } = window.location;
-    console.log(
-      "[DOMAIN]history/connect - window.addEventListener('popstate'",
-      {
-        to: event.state?.to,
-        from: event.state?.from,
-      },
-      {
-        to: window.history.state?.to,
-        from: window.history.state?.from,
-      },
-      pathname
-    );
-    history.$router.handlePopState({ type, href, pathname });
+    history.$router.handlePopState({ type, href, pathname: event.state?.to });
   });
 }

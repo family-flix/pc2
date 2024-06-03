@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import {  ref } from "vue";
 
 import { PresenceCore } from "@/domains/ui";
 import { cn } from "@/utils/index";
 
-const { store, className } = defineProps<{ store: PresenceCore; className?: string }>();
-const cx = cn("presence", className);
+const { store, enterClassName, exitClassName, className } = defineProps<{
+  store: PresenceCore;
+  enterClassName?: string;
+  exitClassName?: string;
+  className?: string;
+}>();
 
 const state = ref(store.state);
+const cx = cn(
+  "presence",
+  state.value.enter && enterClassName ? enterClassName : "",
+  state.value.exit && exitClassName ? exitClassName : "",
+  className
+);
 
 function handleAnimationEnd() {
   store.unmount();
@@ -23,7 +33,7 @@ store.onStateChange((v) => {
     <div
       :class="cx"
       role="presentation"
-      :data-state="state.open ? 'open' : 'closed'"
+      :data-state="state.visible ? 'open' : 'closed'"
       @animationend="handleAnimationEnd"
     >
       <slot></slot>

@@ -1,8 +1,10 @@
 import parse from "url-parse";
 
+import { MediaOriginCountry } from "@/constants/index";
+import { padding_zero } from "@/utils/index";
+
 import { SubtitleFile, SubtitleFileSuffix, SubtitleParagraph } from "./types";
-import { SubtitleCore } from ".";
-import { MediaOriginCountry } from "@/constants";
+import { SubtitleCore } from "./index";
 
 export function timeStrToSeconds(durationStr: string) {
   if (durationStr.match(/[0-9]{1,2}:[0-9]{2}:[0-9]{2}[\.,]/)) {
@@ -20,6 +22,14 @@ export function timeStrToSeconds(durationStr: string) {
   }
   return 0;
 }
+export function formatHourNumCount(v: string) {
+  const r = v.match(/([0-9]{1,2})(:[0-9]{2}:[0-9]{2}[\.,])([0-9]{1,})/);
+  if (!r) {
+    return v;
+  }
+  const [, a, b, c] = r;
+  return padding_zero(a) + b + padding_zero(c, { count: 3, pos: 2 });
+}
 
 export function parseSubtitleUrl(url: string): SubtitleFileSuffix {
   if (!url) {
@@ -35,6 +45,9 @@ export function parseSubtitleUrl(url: string): SubtitleFileSuffix {
 
 const SUBTITLE_PARSER_MAP: Record<SubtitleFileSuffix, (content: string) => SubtitleParagraph[]> = {
   srt: (content: string) => {
+    if (!content) {
+      return [];
+    }
     let oriParagraphs = content.split("\r\n\r\n").filter(Boolean);
     if (oriParagraphs.length === 1) {
       oriParagraphs = oriParagraphs[0].split("\n\n").filter(Boolean);
@@ -91,6 +104,9 @@ const SUBTITLE_PARSER_MAP: Record<SubtitleFileSuffix, (content: string) => Subti
       });
   },
   vtt: (content: string) => {
+    if (!content) {
+      return [];
+    }
     const c = content.replace(/WEBVTT/, "");
     const oriParagraphs = c.split("\n\n").filter(Boolean);
     //     console.log("[DOMAIN]subtitle/utils - vtt", oriParagraphs);
@@ -127,6 +143,9 @@ const SUBTITLE_PARSER_MAP: Record<SubtitleFileSuffix, (content: string) => Subti
       });
   },
   ass: (content: string) => {
+    if (!content) {
+      return [];
+    }
     const lines = content.match(/Dialogue:[^\n]{1,}\n{0,}/g);
     if (!lines) {
       return [];
@@ -195,22 +214,22 @@ const VVTLanguageLabelMaps = {
   "chi&eng": "中英对照",
 };
 const VVTLanguageLangMaps = {
-  [MediaOriginCountry.CN]: "zh-Hans",
-  [MediaOriginCountry.TW]: "zh-Hant",
+  [MediaOriginCountry.CN]: "zh",
+  [MediaOriginCountry.TW]: "zh",
   [MediaOriginCountry.JP]: "ja",
   [MediaOriginCountry.US]: "en",
-  "chi&eng": "中英对照",
+  "chi&eng": "zh",
 };
 export function createVVTSubtitle(store: SubtitleCore) {
   const { lines } = store;
   const content = [
     "WEBVTT",
     "",
-    ...lines.map((line) => {
+    ...lines.map((line, i) => {
       const { start, end, texts } = line;
-      return [`${start} --> ${end}`, ...texts].join("\n");
+      return [`${formatHourNumCount(start)} --> ${formatHourNumCount(end)}`, ...texts].join("\n");
     }),
-  ].join("\r\n");
+  ].join("\r\n\r\n");
   const blob = new Blob([content], { type: "text/vtt" });
   const url = URL.createObjectURL(blob);
   return {
@@ -218,6 +237,11 @@ export function createVVTSubtitle(store: SubtitleCore) {
     label: store.lang
       ? VVTLanguageLabelMaps[store.lang.join("&") as keyof typeof VVTLanguageLabelMaps]
       : store.filename,
-    lang: store.lang ? VVTLanguageLangMaps[store.lang.join("&") as keyof typeof VVTLanguageLangMaps] : store.filename,
+    lang: (() => {
+      if (!store.lang) {
+        return "zh";
+      }
+      return VVTLanguageLangMaps[store.lang.join("&") as keyof typeof VVTLanguageLangMaps] || "zh";
+    })(),
   };
 }

@@ -1,3 +1,5 @@
+import { PageKeysType, build } from "@/domains/route_view/utils";
+
 /**
  * @file 路由配置
  */
@@ -128,134 +130,13 @@ const configure = {
     },
   },
 };
-type PageKeysType<T extends OriginalRouteConfigure, K = keyof T> = K extends keyof T & (string | number)
-  ?
-      | `${K}`
-      | (T[K] extends object
-          ? T[K]["children"] extends object
-            ? `${K}.${PageKeysType<T[K]["children"]>}`
-            : never
-          : never)
-  : never;
-export type PathnameKey = string;
+
 export type PageKeys = PageKeysType<typeof configure>;
-export type RouteConfig = {
-  /** 使用该值定位唯一 route/page */
-  name: PageKeys;
-  title: string;
-  pathname: PathnameKey;
-  /** 是否为布局 */
-  layout?: boolean;
-  parent: {
-    name: string;
-  };
-  options?: Partial<{
-    keep_alive: boolean;
-    animation: {
-      in: string;
-      out: string;
-      show: string;
-      hide: string;
-    };
-    require: string[];
-  }>;
-  // component: unknown;
-};
-type OriginalRouteConfigure = Record<
-  PathnameKey,
-  {
-    title: string;
-    pathname: string;
-    options?: Partial<{
-      keep_alive: boolean;
-      require: string[];
-      animation: {
-        in: string;
-        out: string;
-        show: string;
-        hide: string;
-      };
-    }>;
-    children?: OriginalRouteConfigure;
-    // component: unknown;
-  }
->;
-function apply(
-  configure: OriginalRouteConfigure,
-  parent: {
-    pathname: PathnameKey;
-    name: string;
-  }
-): RouteConfig[] {
-  const routes = Object.keys(configure).map((key) => {
-    const config = configure[key];
-    const { title, pathname, options, children } = config;
-    // 一个 hack 操作，过滤掉 root
-    const name = [parent.name, key].filter(Boolean).join(".") as PageKeys;
-    if (children) {
-      const subRoutes = apply(children, {
-        name,
-        pathname,
-      });
-      return [
-        {
-          title,
-          name,
-          pathname,
-          // component,
-          options,
-          layout: true,
-          parent: {
-            name: parent.name,
-          },
-        },
-        ...subRoutes,
-      ];
-    }
-    return [
-      {
-        title,
-        name,
-        pathname,
-        // component,
-        options,
-        parent: {
-          name: parent.name,
-        },
-      },
-    ];
-  });
-  return routes.reduce((a, b) => {
-    return a.concat(b);
-  }, []);
-}
-const configs = apply(configure, {
-  name: "",
-  pathname: "/",
-});
-export const routes: Record<PathnameKey, RouteConfig> = configs
-  .map((a) => {
-    return {
-      [a.name]: a,
-    };
-  })
-  .reduce((a, b) => {
-    return {
-      ...a,
-      ...b,
-    };
-  }, {});
-export const routesWithPathname: Record<PathnameKey, RouteConfig> = configs
-  .map((a) => {
-    return {
-      [a.pathname]: a,
-    };
-  })
-  .reduce((a, b) => {
-    return {
-      ...a,
-      ...b,
-    };
-  }, {});
+const result = build<PageKeys>(configure);
+export const routes = result.routes;
+export const routesWithPathname = result.routesWithPathname;
+
 // @ts-ignore
-window.__routes__ = routes;
+globalThis.__routes_with_pathname__ = routesWithPathname;
+// @ts-ignore
+globalThis.__routes__ = routes;

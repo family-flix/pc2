@@ -3,11 +3,11 @@
  */
 import { Handler, BaseDomain } from "@/domains/base";
 import { MediaResolutionTypes } from "@/domains/source/constants";
-import { MediaSourceFileCore } from "@/domains/source";
-import { HttpClientCore } from "@/domains/http_client";
-import { RequestCoreV2 } from "@/domains/request/v2";
-import { MediaTypes } from "@/constants";
-import { Result } from "@/types";
+import { MediaSourceFileCore } from "@/domains/source/index";
+import { HttpClientCore } from "@/domains/http_client/index";
+import { Result } from "@/domains/result/index";
+import { RequestCore } from "@/domains/request/index";
+import { MediaTypes } from "@/constants/index";
 
 import {
   CurMediaSource,
@@ -62,8 +62,10 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
   played = false;
   canAutoPlay = false;
 
+  /** 实际播放的视频 */
   $source: MediaSourceFileCore;
   $client: HttpClientCore;
+  $update: RequestCore<typeof updatePlayHistory>;
 
   get state(): MovieCoreState {
     return {
@@ -82,6 +84,7 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       resolution,
       client,
     });
+    this.$update = new RequestCore(updatePlayHistory, { client });
   }
 
   async fetchProfile(media_id: string) {
@@ -89,8 +92,7 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       const msg = this.tip({ text: ["缺少电影 id 参数"] });
       return Result.Err(msg);
     }
-    const fetch = new RequestCoreV2({
-      fetch: fetchMediaPlayingEpisode,
+    const fetch = new RequestCore(fetchMediaPlayingEpisode, {
       process: fetchMediaPlayingEpisodeProcess,
       client: this.$client,
     });
@@ -99,7 +101,7 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       const msg = this.tip({ text: ["获取电视剧详情失败", res.error.message] });
       return Result.Err(msg);
     }
-    const { id, name, overview, sourceCount, posterPath, curSource } = res.data;
+    const { id, name, overview, posterPath, curSource } = res.data;
     this.profile = {
       id,
       name,
@@ -118,7 +120,7 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
   }
 
   /** 播放该电视剧下指定影片 */
-  async playSource(source: MediaSource, extra: { currentTime: number }) {
+  async playSource(source: MediaSource & { curFileId?: string }, extra: { currentTime: number }) {
     const { currentTime = 0 } = extra;
     // console.log("[DOMAIN]tv/index - playEpisode", this.curSource, this._subtitleStore);
     if (!this.profile) {
@@ -138,7 +140,15 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
       });
       return Result.Err(tip);
     }
-    const file = files[0];
+    const file = (() => {
+      if (source.curFileId) {
+        const matched = files.find((f) => f.id === source.curFileId);
+        if (matched) {
+          return matched;
+        }
+      }
+      return files[0];
+    })();
     // console.log("[DOMAIN]media/season - playSource before this.$source.load", source);
     this.curSource = { ...source, currentTime, thumbnailPath: source.stillPath, curFileId: file.id };
     const res = await this.$source.load(file);
@@ -224,11 +234,7 @@ export class MovieMediaCore extends BaseDomain<TheTypesOfEvents> {
     if (this.$source.profile === null) {
       return;
     }
-    const request = new RequestCoreV2({
-      fetch: updatePlayHistory,
-      client: this.$client,
-    });
-    request.run({
+    this.$update.run({
       media_id: this.profile.id,
       media_source_id: this.curSource.id,
       current_time: parseFloat(currentTime.toFixed(2)),

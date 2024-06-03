@@ -10,14 +10,13 @@ import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { fetchPlayingHistories, fetchPlayingHistoriesProcess, PlayHistoryItem } from "@/domains/media/services";
 import { MediaTypes } from "@/constants";
 import { ImageInListCore } from "@/domains/ui/image";
-import { ListCoreV2 } from "@/domains/list/v2";
-import { RequestCoreV2 } from "@/domains/request/v2";
+import { ListCore } from "@/domains/list/index";
+import { RequestCore } from "@/domains/request/index";
 
 const { app, view, history, client } = defineProps<ViewComponentProps>();
 
-const helper = new ListCoreV2(
-  new RequestCoreV2({
-    fetch: fetchPlayingHistories,
+const helper = new ListCore(
+  new RequestCore(fetchPlayingHistories, {
     process: fetchPlayingHistoriesProcess,
     client,
   }),

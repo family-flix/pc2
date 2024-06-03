@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineProps } from "vue";
-
 import PopperPrimitiveRoot from "@/packages/ui/popper/root.vue";
 import { MenuCore } from "@/domains/ui";
 

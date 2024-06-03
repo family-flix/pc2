@@ -8,8 +8,6 @@ export enum MediaResolutionTypes {
   HD = "HD",
   /** 超高清 */
   FHD = "FHD",
-  /** 超高清 */
-  QHD = "QHD",
 }
 /** 影片分辨率中文描述 */
 export const MediaResolutionTypeTexts = {
@@ -17,5 +15,4 @@ export const MediaResolutionTypeTexts = {
   [MediaResolutionTypes.SD]: "普清",
   [MediaResolutionTypes.HD]: "高清",
   [MediaResolutionTypes.FHD]: "4K",
-  [MediaResolutionTypes.QHD]: "QHD",
 };
