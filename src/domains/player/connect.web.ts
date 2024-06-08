@@ -1,5 +1,3 @@
-import { Result } from "@/domains/result/index";
-
 import { PlayerCore } from "./index";
 
 /** 连接 $video 标签和 player 领域 */
@@ -15,7 +13,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
   };
   $video.onloadedmetadata = function (event) {
     // 2
-    console.log("[COMPONENT]VideoPlayer/connect - $video.onloadedmetadata");
+    // console.log("[COMPONENT]VideoPlayer/connect - $video.onloadedmetadata", $video.duration);
     // @ts-ignore
     const width = this.videoWidth;
     // @ts-ignore
@@ -25,6 +23,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     player.handleLoadedmetadata({
       width,
       height,
+      duration: $video.duration,
     });
   };
   $video.onload = () => {
@@ -33,7 +32,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
   };
   // 这个居然会在调整时间进度后调用？？？
   $video.oncanplay = (event) => {
-    console.log("[COMPONENT]VideoPlayer/connect - $video.oncanplay");
+    // console.log("[COMPONENT]VideoPlayer/connect - $video.oncanplay");
     // const { duration } = event.currentTarget as HTMLVideoElement;
     // console.log("[COMPONENT]VideoPlayer/connect - listen $video can play");
     player.handleCanPlay();
@@ -130,7 +129,7 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       try {
         await $video.play();
       } catch (err) {
-        // ...
+        console.log(err);
       }
     },
     pause() {
@@ -139,8 +138,24 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
     canPlayType(type: string) {
       return !!$video.canPlayType(type);
     },
-    load(url: string) {
+    async load(url: string) {
       // console.log("[DOMAIN]player/connect - load", url, $video);
+      console.log("[]player.onUrlChange", url, $video.canPlayType("application/vnd.apple.mpegurl"), $video);
+      if ($video.canPlayType("application/vnd.apple.mpegurl")) {
+        $video.src = url;
+        $video.load();
+        return;
+      }
+      const mod = await import("hls.js");
+      const Hls2 = mod.default;
+      if (Hls2.isSupported() && url.includes("m3u8")) {
+        const Hls = new Hls2({ fragLoadingTimeOut: 2000 });
+        Hls.attachMedia($video as HTMLVideoElement);
+        Hls.on(Hls2.Events.MEDIA_ATTACHED, () => {
+          Hls.loadSource(url);
+        });
+        return;
+      }
       $video.src = url;
       $video.load();
     },

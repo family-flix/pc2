@@ -14,13 +14,14 @@ export type RequestPayload<T> = {
   body?: any;
   headers?: Record<string, string | number>;
   // defaultResponse?: T;
-  process?: (v: T) => T;
+  process?: (v: any) => T;
 };
 /**
  * GetRespTypeFromRequestPayload
  * T extends RequestPayload
  */
 export type UnpackedRequestPayload<T> = NonNullable<T extends RequestPayload<infer U> ? (U extends null ? U : U) : T>;
+// export type UnpackedRequestPayload<T> = T extends RequestPayload<infer U> ? U : T;
 export type TmpRequestResp<T extends (...args: any[]) => any> = Result<UnpackedRequestPayload<RequestedResource<T>>>;
 
 let posterHandler: null | ((v: RequestPayload<any>) => void) = null;
@@ -94,24 +95,25 @@ export function request_factory(opt: {
     beta?: string;
     prod: string;
   };
-  process: (v: any) => any;
+  debug?: boolean;
+  process?: (v: any) => any;
 }) {
   let _hostname = opt.hostnames.prod;
   let _headers = {} as Record<string, string | number>;
   let _env = "prod";
-  let _debug = false;
+  let _debug = opt.debug ?? false;
   return {
     setHostname(hostname: string) {
       if (_debug) {
         console.log("[REQUEST]utils - setHostname", hostname);
       }
-      hostname = hostname;
+      _hostname = hostname;
     },
     setHeaders(headers: Record<string, string | number>) {
       if (_debug) {
         console.log("[REQUEST]utils - setHeaders", headers);
       }
-      headers = headers;
+      _headers = headers;
     },
     appendHeaders(extra: Record<string, string | number>) {
       if (_debug) {
@@ -141,6 +143,9 @@ export function request_factory(opt: {
         _hostname = prod;
       }
     },
+    setDebug(debug: boolean) {
+      _debug = debug;
+    },
     get<T>(...args: Parameters<typeof request.get>) {
       const payload = request.get<T>(...args);
       const { url, method, query, params, body, headers } = payload;
@@ -152,6 +157,7 @@ export function request_factory(opt: {
         console.log("current env is", _env);
       }
       const result: RequestPayload<T> = {
+        hostname: _hostname,
         url,
         method,
         query,
@@ -161,7 +167,6 @@ export function request_factory(opt: {
           ...payload.headers,
           ...headers,
         },
-        hostname: _hostname,
         process: opt.process,
       };
       return result;
@@ -176,6 +181,7 @@ export function request_factory(opt: {
         console.log("current headers is", _headers);
       }
       const result: RequestPayload<T> = {
+        hostname: _hostname,
         url,
         method,
         query,
@@ -185,7 +191,6 @@ export function request_factory(opt: {
           ...payload.headers,
           ..._headers,
         },
-        hostname: _hostname,
         process: opt.process,
       };
       return result;

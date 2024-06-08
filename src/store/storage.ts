@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-import { MediaResolutionTypes } from "@/domains/source/constants";
+import { MediaResolutionTypes } from "@/biz/source/constants";
 import { StorageCore } from "@/domains/storage";
 import { AuthCodeStep } from "@/constants/index";
 

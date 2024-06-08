@@ -62,7 +62,6 @@ function play(media: MediaItem) {
   // }
 }
 
-// console.log("home/search initialize");
 view.onReady(() => {
   console.log("home/search ready");
 });
@@ -75,9 +74,9 @@ view.onShow(() => {
 view.onHidden(() => {
   console.log("home/search hide");
 });
-scroll.onReachBottom(() => {
-  helper.loadMore();
-});
+// scroll.onReachBottom(() => {
+//   helper.loadMore();
+// });
 helper.onStateChange((nextResponse) => {
   response.value = {
     ...nextResponse,

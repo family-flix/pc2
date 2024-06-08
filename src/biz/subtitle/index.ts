@@ -69,7 +69,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
     const { content, name: subtitle_name } = content_res.data;
     const suffix = parseSubtitleUrl(subtitle_name);
     const paragraphs = parseSubtitleContent(content, suffix);
-    // console.log("[DOMAIN]subtitle/index - paragraphs", paragraphs);
+    console.log("[DOMAIN]subtitle/index - paragraphs", paragraphs);
     const store = new SubtitleCore({
       filename: subtitle_name,
       language,
@@ -152,7 +152,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
       this.emit(Events.StateChange, { ...this.state });
       this.changeTargetLine(currentTime);
     }
-    // console.log("[DOMAIN]subtitle/index - handleTimeChange after this.changeTargetLine", this.targetLine);
+    console.log("[DOMAIN]subtitle/index - handleTimeChange after this.changeTargetLine", this.targetLine);
     this.curTime = currentTime;
     if (!this.targetLine) {
       return;

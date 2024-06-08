@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, onMounted, onUnmounted } from "vue";
 import { ArrowLeft, Layers, Play, Pause, FastForward, Rewind, SkipForward, Settings, Maximize } from "lucide-vue-next";
-import { CheckCheck, Minimize } from "lucide-vue-next";
+import hotkeys from "hotkeys-js";
+import { CheckCheck, Minimize, Loader2 } from "lucide-vue-next";
 
 import { ViewComponentProps } from "@/store/types";
 import Video from "@/components/Video.vue";
 import PlayerProgressBar from "@/components/player-progress-bar/index.vue";
 import Presence from "@/components/ui/Presence.vue";
 import Dialog from "@/components/ui/Dialog.vue";
+import { MovieMediaCore } from "@/biz/media/movie";
+import { createVVTSubtitle } from "@/biz/subtitle/utils";
+import { MediaResolutionTypes } from "@/biz/source/constants";
 import { PlayerCore } from "@/domains/player";
-import { createVVTSubtitle } from "@/domains/subtitle/utils";
 import { RefCore } from "@/domains/cur";
 import { OrientationTypes } from "@/domains/app";
 import { RouteViewCore } from "@/domains/route_view";
-import { MovieMediaCore } from "@/domains/media/movie";
-import { MediaResolutionTypes } from "@/domains/source/constants";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { PresenceCore } from "@/domains/ui/presence";
 import { DialogCore } from "@/domains/ui/dialog";
@@ -80,7 +81,6 @@ function MoviePlayingPageLogic(props: ViewComponentProps) {
     // console.log("[PAGE]play - tv.onProfileLoaded", curEpisode.name);
     tv.playSource(curSource, { currentTime: curSource.currentTime ?? 0 });
     player.setCurrentTime(curSource.currentTime);
-    //       bottomOperation.show();
   });
   tv.$source.onSubtitleLoaded((subtitle) => {
     player.showSubtitle(createVVTSubtitle(subtitle));
@@ -242,45 +242,47 @@ class MoviePlayingPageView {
     this.$view = view;
   }
 
-  show() {
+  showControls() {
+    app.showCursor();
     this.$top.show();
     this.$bottom.show();
     this.$control.show();
     this.$mask.show();
   }
-  hide() {
+  hideControls() {
+    app.hideCursor();
     this.$top.hide();
     this.$bottom.hide();
     this.$control.hide();
     this.$mask.hide();
   }
-  toggle() {
+  toggleControls() {
     this.$top.toggle();
     this.$bottom.toggle();
     this.$control.toggle();
     this.$mask.toggle();
   }
-  attemptToShow() {
+  attemptToShowControls() {
     if (this.timer !== null) {
-      this.hide();
+      this.hideControls();
       clearTimeout(this.timer);
       this.timer = null;
       return false;
     }
-    this.show();
+    this.showControls();
     return true;
   }
-  prepareHide() {
+  prepareHideControls() {
     if (this.timer !== null) {
       clearTimeout(this.timer);
       this.timer = null;
     }
     this.timer = setTimeout(() => {
-      this.hide();
+      this.hideControls();
       this.timer = null;
     }, 2400);
   }
-  stopHide() {
+  stopHideControls() {
     if (this.timer !== null) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -311,9 +313,6 @@ const isFull = ref(false);
 // const targetTime = ref<null | string>(null);
 const playerState = ref($logic.$player.state);
 
-function back() {
-  history.back();
-}
 if (view.query.rate) {
   $logic.$player.changeRate(Number(view.query.rate));
 }
@@ -383,22 +382,81 @@ function changeRate(rate: number) {
 function changeSourceFile(file: { id: string }) {
   $logic.$tv.changeSourceFile(file);
 }
-function toggleFullScreen() {
-  const element = pageRef.value;
-  if (!element) {
+function handleClickElm(event: MouseEvent) {
+  const target = event.currentTarget as HTMLDivElement | null;
+  if (target === null) {
     return;
   }
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
-    isFull.value = false;
+  console.log("[PAGE]media/moving_playing - handleClickElm", target);
+  const { elm } = target.dataset;
+  if (!elm) {
     return;
   }
-  isFull.value = true;
-  element.requestFullscreen().catch((err) => {
-    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-  });
+  if (elm === "screen") {
+    if ($logic.$player.playing) {
+      app.hideCursor();
+    }
+    $page.toggleControls();
+    return;
+  }
+  if (elm === "play-menu") {
+    $logic.$player.play();
+    return;
+  }
+  if (elm === "pause-menu") {
+    $logic.$player.pause();
+    return;
+  }
+  if (elm === "arrow-left-menu") {
+    history.back();
+    return;
+  }
+  if (elm === "source-menu") {
+    $page.$source.show();
+    return;
+  }
+  if (elm === "rate-menu") {
+    $page.$rate.show();
+    return;
+  }
+  if (elm === "screen-menu") {
+    const element = pageRef.value;
+    if (!element) {
+      return;
+    }
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+      isFull.value = false;
+      return;
+    }
+    isFull.value = true;
+    element.requestFullscreen().catch((err) => {
+      console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+    });
+  }
 }
-
+function handleMouseMove() {
+  if ($logic.$player.playing) {
+    $page.showControls();
+    return;
+  }
+}
+onMounted(() => {
+  hotkeys("space", (event, handler) => {
+    event.preventDefault();
+    if ($logic.$player.playing) {
+      $page.showControls();
+      $logic.$player.pause();
+      return;
+    }
+    $logic.$player.play();
+    $page.hideControls();
+  });
+  document.documentElement.addEventListener("mousemove", handleMouseMove);
+});
+onUnmounted(() => {
+  document.documentElement.removeEventListener("mousemove", handleMouseMove);
+});
 $logic.$tv.fetchProfile(view.query.id);
 </script>
 
@@ -410,7 +468,7 @@ $logic.$tv.fetchProfile(view.query.id);
     <div class="video flex items-center w-full h-full bg-[#000000]">
       <Video :store="$logic.$player"></Video>
     </div>
-    <div class="absolute z-0 inset-0" @click="$page.toggle">
+    <div class="absolute z-0 inset-0" data-elm="screen" @click="handleClickElm">
       <div class="absolute top-0 w-full">
         <Presence
           :store="$page.$top"
@@ -418,12 +476,12 @@ $logic.$tv.fetchProfile(view.query.id);
         >
           <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-b to-transparent from-w-black"></div>
           <div class="relative z-20 p-4 text-w-white" @click.stop>
-            <div class="flex items-center cursor-pointer" @click="back">
+            <div class="flex items-center cursor-pointer" data-elm="arrow-left" @click="handleClickElm">
               <div class="inline-template p-4">
-                <ArrowLeft class="w-8 h-8" />
+                <ArrowLeft class="w-12 h-12" />
               </div>
               <template v-if="!!profile.curSource">
-                <div class="text-2xl truncate break-all">
+                <div class="text-4xl truncate break-all">
                   {{ profile.curSource?.name }}
                 </div>
               </template>
@@ -450,41 +508,63 @@ $logic.$tv.fetchProfile(view.query.id);
           class="animate-in fade-in slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:fade-out"
         >
           <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-t to-transparent from-w-black"></div>
-          <div class="relative z-20 px-4 py-6 pt-10 text-w-white" @click.stop>
+          <div class="relative z-20 px-4 py-6 pt-10 text-w-white" @click.stop @mouseup.stop>
             <div class="px-4">
-              <PlayerProgressBar :store="$logic.$player" />
+              <PlayerProgressBar :app="app" :store="$logic.$player" />
             </div>
             <div class="flex items-center justify-between mt-6 w-full px-4">
-              <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-4 min-h-[64px]">
                 <template v-if="!!playerState.ready">
                   <div>
                     <template v-if="playerState.playing">
-                      <div class="cursor-pointer" @click="$logic.$player.pause">
-                        <Pause class="w-8 h-8" />
+                      <div class="cursor-pointer" data-elm="pause-menu" @click="handleClickElm">
+                        <Pause class="w-16 h-16" />
                       </div>
                     </template>
                     <template v-else>
-                      <div class="cursor-pointer" @click="$logic.$player.play">
-                        <Play class="w-8 h-8" />
+                      <div class="cursor-pointer" data-elm="play-menu" @click="handleClickElm">
+                        <Play class="w-16 h-16" />
                       </div>
                     </template>
                   </div>
                 </template>
-                <div class="relative p-2 rounded-md space-x-2 cursor-pointer">
-                  <SkipForward class="w-8 h-8" />
-                </div>
+                <template v-else>
+                  <div>
+                    <Loader2 class="w-16 h-16 animate animate-spin" />
+                  </div>
+                </template>
               </div>
               <div class="flex items-center space-x-4">
-                <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$source.show">
+                <div
+                  class="relative p-2 rounded-md cursor-pointer"
+                  data-elm="source-menu"
+                  @click="handleClickElm"
+                  @mouseup.stop
+                >
                   <div>切换源</div>
                 </div>
-                <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$resolution.show">
+                <div
+                  class="relative p-2 rounded-md cursor-pointer"
+                  data-elm="resolution-menu"
+                  @click="handleClickElm"
+                  @mouseup.stop
+                >
                   <div>{{ curSource?.typeText }}</div>
                 </div>
-                <div class="relative p-2 rounded-md cursor-pointer" @click="$page.$rate.show">
+                <div
+                  class="relative p-2 rounded-md cursor-pointer"
+                  data-elm="rate-menu"
+                  @click="handleClickElm"
+                  @mouseup.stop
+                >
                   <div>{{ playerState?.rate }}x</div>
                 </div>
-                <div class="relative p-2 rounded-md cursor-pointer" @click="toggleFullScreen">
+                <div
+                  class="relative p-2 rounded-md cursor-pointer"
+                  data-elm="screen-menu"
+                  @click="handleClickElm"
+                  @mouseup.stop
+                >
                   <template v-if="!isFull">
                     <Maximize class="w-8 h-8" />
                   </template>
@@ -504,6 +584,7 @@ $logic.$tv.fetchProfile(view.query.id);
           <template v-for="resolution in curSource?.resolutions">
             <div
               :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              data-elm="resolution"
               @click="changeResolution(resolution)"
             >
               <div class="">{{ resolution.typeText }}</div>

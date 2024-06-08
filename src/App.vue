@@ -12,7 +12,7 @@ import Toast from "./components/ui/Toast.vue";
 import { connect as connectApplication } from "./domains/app/connect.web";
 import { connect as connectHistory } from "./domains/history/connect.web";
 import { NavigatorCore } from "./domains/navigator/index";
-import { DialogCore, ToastCore } from "./domains/ui/index";
+import { ToastCore } from "./domains/ui/index";
 import { cn } from "./utils/index";
 
 // import MediaCheck from "./components/MediaCheck.vue";
@@ -120,14 +120,14 @@ onMounted(() => {
     // setReady(true);
     const { pathname, query } = history.$router;
     const route = routesWithPathname[pathname];
-    console.log("[ROOT]onMount", pathname);
+    console.log("[ROOT]onMount", pathname, route, app.$user.isLogin);
     if (!route) {
       history.push("root.notfound");
       return;
     }
     if (!app.$user.isLogin) {
       if (route.options?.require?.includes("login")) {
-        history.push("root.login");
+        history.push("root.login", { redirect: route.pathname });
         return;
       }
     }

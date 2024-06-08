@@ -4,17 +4,17 @@ import { ref } from "vue";
 import { ViewComponentProps } from "@/store/types";
 import LazyImage from "@/components/ui/Image.vue";
 import AspectRatio from "@/components/ui/AspectRatio.vue";
-import { ListCore } from "@/domains/list/index";
 import {
   PlayHistoryItem,
   deleteHistory,
   fetchPlayingHistories,
   fetchPlayingHistoriesProcess,
-} from "@/domains/media/services";
+} from "@/biz/media/services";
+import { ListCore } from "@/domains/list/index";
 import { RequestCore } from "@/domains/request/index";
 import { DialogCore, ImageInListCore, NodeInListCore, PopoverCore, ScrollViewCore } from "@/domains/ui";
 import { RefCore } from "@/domains/cur";
-import { MediaTypes } from "@/constants";
+import { MediaTypes } from "@/constants/index";
 
 const { app, client, history, store } = defineProps<
   { store: PopoverCore } & Pick<ViewComponentProps, "app" | "client" | "history">
@@ -167,7 +167,7 @@ historyList.init();
             </div>
             <div class="relative mt-4 w-full">
               <div class="w-full h-[4px] rounded-md bg-w-brand" :style="{ width: `${history.percent}%` }"></div>
-              <div class="absolute top-1/2 -translate-y-1/2">{{ history.percent }}%</div>
+              <!-- <div class="absolute top-1/2 -translate-y-1/2">{{ history.percent }}%</div> -->
             </div>
           </div>
         </div>
@@ -180,3 +180,4 @@ historyList.init();
     </div>
   </div>
 </template>
+@/biz/media/services

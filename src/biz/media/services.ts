@@ -1,11 +1,11 @@
 import dayjs from "dayjs";
 
-import { ListResponse, ListResponseWithCursor } from "@/store/types";
 import { media_request } from "@/biz/requests/index";
+import { ListResponse, ListResponseWithCursor } from "@/biz/requests/types";
 import { TmpRequestResp } from "@/domains/request/utils";
 import { FetchParams } from "@/domains/list/typing";
-import { SubtitleFileResp } from "@/domains/subtitle/types";
-import { MediaResolutionTypes, MediaResolutionTypeTexts } from "@/domains/source/constants";
+import { SubtitleFileResp } from "@/biz/subtitle/types";
+import { MediaResolutionTypes, MediaResolutionTypeTexts } from "@/biz/source/constants";
 import { Result } from "@/domains/result/index";
 import { RequestedResource, Unpacked, UnpackedResult } from "@/types/index";
 import { MediaTypes, MediaOriginCountry, SeasonGenresTexts, SeasonMediaOriginCountryTexts } from "@/constants/index";

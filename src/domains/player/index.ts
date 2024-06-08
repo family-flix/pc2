@@ -2,13 +2,24 @@
  * @file 播放器
  */
 import { BaseDomain, Handler } from "@/domains/base";
-import { MediaResolutionTypes } from "@/domains/source/constants";
 import { Application } from "@/domains/app";
 import { Result } from "@/domains/result/index";
 
+/** 影片分辨率 */
+enum MediaResolutionTypes {
+  /** 标清 */
+  LD = "LD",
+  /** 普清 */
+  SD = "SD",
+  /** 高清 */
+  HD = "HD",
+  /** 超高清 */
+  FHD = "FHD",
+}
+
 enum Events {
   Mounted,
-  /** 改变播放地址（切换剧集或分辨率） */
+  /** 改变播放地址（切换剧集、分辨率或视频文件） */
   UrlChange,
   /** 调整进度 */
   CurrentTimeChange,
@@ -57,7 +68,7 @@ type TheTypesOfEvents = {
   [Events.CurrentTimeChange]: { currentTime: number };
   [Events.BeforeAdjustCurrentTime]: void;
   [Events.TargetTimeChange]: number;
-  [Events.AfterAdjustCurrentTime]: void;
+  [Events.AfterAdjustCurrentTime]: { time: number };
   [Events.ResolutionChange]: {
     type: MediaResolutionTypes;
     text: string;
@@ -210,6 +221,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   hasPlayed = false;
   /** 开始播放 */
   async play() {
+    console.log("[DOMAIN]player/index - play", this._abstractNode, this.playing);
     if (this._abstractNode === null) {
       return;
     }
@@ -322,6 +334,11 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   setResolution(values: { type: MediaResolutionTypes; text: string }) {
     this.emit(Events.ResolutionChange, values);
   }
+  clearSubtitle() {
+    // console.log("[DOMAIN]player - clearSubtitle");
+    this.subtitle = null;
+    this.emit(Events.StateChange, { ...this.state });
+  }
   showSubtitle(subtitle: { src: string; label: string; lang: string }) {
     this.subtitle = subtitle;
     this.emit(Events.StateChange, { ...this.state });
@@ -387,6 +404,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
   }
   load(url: string) {
     console.log("[DOMAIN]player - load", url, this._abstractNode);
+    this._canPlay = false;
     if (!this._abstractNode) {
       return;
     }
@@ -402,9 +420,18 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this.emit(Events.TargetTimeChange, targetTime);
   }
   adjustCurrentTime(targetTime: number) {
-    this.setCurrentTime(targetTime);
-    this.play();
-    this.emit(Events.AfterAdjustCurrentTime);
+    if (this.hasPlayed && !this.playing) {
+      this.play();
+    }
+    let time = targetTime;
+    if (time < 0) {
+      time = 0;
+    }
+    if (time > this._duration) {
+      time = this._duration;
+    }
+    this.setCurrentTime(time);
+    this.emit(Events.AfterAdjustCurrentTime, { time });
   }
   async screenshot(): Promise<Result<string>> {
     return Result.Err("请实现 screenshot 方法");
@@ -438,7 +465,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       duration: this._duration,
       progress: this._progress,
     });
-    // console.log("[DOMAIN]Player - time update", progress);
+    // console.log("[DOMAIN]Player - time update", currentTime, this._duration);
     if (currentTime + 10 >= this._duration) {
       if (this._passPoint) {
         return;
@@ -514,8 +541,10 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       duration: this._duration,
     });
   }
-  handleLoadedmetadata(size: { width: number; height: number }) {
-    this.setSize(size);
+  handleLoadedmetadata(values: { width: number; height: number; duration: number }) {
+    const { width, height } = values;
+    this.setSize({ width, height });
+    this._duration = values.duration;
     this.emit(Events.SourceLoaded);
   }
   handleLoad() {

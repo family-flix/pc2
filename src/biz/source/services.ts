@@ -1,6 +1,6 @@
 import { media_request } from "@/biz/requests/index";
 import { TmpRequestResp } from "@/domains/request/utils";
-import { SubtitleFileResp } from "@/domains/subtitle/types";
+import { SubtitleFileResp } from "@/biz/subtitle/types";
 import { Unpacked, UnpackedResult } from "@/types";
 import { Result } from "@/domains/result/index";
 

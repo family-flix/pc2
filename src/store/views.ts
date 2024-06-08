@@ -7,7 +7,6 @@ import SeasonPlayingPageV2 from "@/pages/media/season_playing.vue";
 import MoviePlayingPageV2 from "@/pages/media/movie_playing.vue";
 import UserLoginPage from "@/pages/login/index.vue";
 import NotFoundPage from "@/pages/not-found/index.vue";
-import Test1Page from "@/pages/test1/index.vue";
 
 import { PageKeys } from "./routes";
 

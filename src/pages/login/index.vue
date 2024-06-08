@@ -4,9 +4,9 @@ import { onMounted, ref } from "vue";
 import { ViewComponentProps } from "@/store/types";
 import Input from "@/components/ui/Input.vue";
 import Button from "@/components/ui/Button.vue";
+import { QRCodeWithState } from "@/biz/qrcode_confirm/index";
 import { createQRCode } from "@/domains/qrcode/index";
-import { QRCodeWithState } from "@/domains/qrcode_confirm/index";
-import { ButtonCore, InputCore } from "@/domains/ui";
+import { ButtonCore, InputCore } from "@/domains/ui/index";
 import { AuthCodeStep } from "@/constants/index";
 
 const props = defineProps<ViewComponentProps>();
@@ -196,3 +196,4 @@ onMounted(async () => {
 </template>
 
 <style scoped></style>
+@/biz/qrcode_confirm/index

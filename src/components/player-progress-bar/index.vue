@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import { PlayerCore } from "@/domains/player";
-import { cn, seconds_to_hour } from "@/utils";
+import hotkeys from "hotkeys-js";
 
-const props = defineProps<{
-  store: PlayerCore;
-  class?: string;
-}>();
-const { store } = props;
+import { ViewComponentProps } from "@/store/types";
+import { PlayerCore } from "@/domains/player";
+import { cn, seconds_to_hour } from "@/utils/index";
+
+const props = defineProps<
+  Pick<ViewComponentProps, "app"> & {
+    store: PlayerCore;
+    class?: string;
+  }
+>();
+const { app, store } = props;
 
 let isDragRef = false;
 let rectRef = { width: 0, left: 0 };
@@ -21,12 +26,12 @@ const times = ref({
 onMounted(() => {
   document.addEventListener("mousemove", handleTouchMove);
   document.addEventListener("mouseup", handleTouchEnd);
-  document.addEventListener("pointerup", handleTouchEnd);
+  // document.addEventListener("pointerup", handleTouchEnd);
 });
 onUnmounted(() => {
   document.removeEventListener("mousemove", handleTouchMove);
   document.removeEventListener("mouseup", handleTouchEnd);
-  document.removeEventListener("pointerup", handleTouchEnd);
+  // document.removeEventListener("pointerup", handleTouchEnd);
 });
 
 store.onStateChange((nextState) => {
@@ -34,6 +39,12 @@ store.onStateChange((nextState) => {
 });
 store.onCurrentTimeChange((v) => {
   progress.value = v.currentTime;
+});
+store.onCanPlay(() => {
+  times.value = {
+    currentTime: seconds_to_hour(store.currentTime),
+    duration: seconds_to_hour(store._duration),
+  };
 });
 store.onProgress((v) => {
   progress.value = v.progress;
@@ -92,7 +103,7 @@ function handleAnimationEnd(event: AnimationEvent) {
 
 <template>
   <div class="user-select-none" @click.stop>
-    <div class="flex items-center text-sm">
+    <div class="flex items-center text-xl">
       <div>{{ times.currentTime }}</div>
       <div class="mx-2">/</div>
       <div>{{ times.duration }}</div>

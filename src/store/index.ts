@@ -1,8 +1,12 @@
+import hotkeys from "hotkeys-js";
+
 import { fetchInfo, fetchNotifications, fetchNotificationsProcess } from "@/services/index";
+import { UserCore } from "@/biz/user";
 import { Application } from "@/domains/app/index";
 import { ListCore } from "@/domains/list/index";
 import { NavigatorCore } from "@/domains/navigator/index";
 import { RouteViewCore } from "@/domains/route_view/index";
+import { StorageCore } from "@/domains/storage/index";
 import { RouteConfig } from "@/domains/route_view/utils";
 import { HistoryCore } from "@/domains/history/index";
 import { onCreate as onCreateScrollView } from "@/domains/ui/scroll-view";
@@ -11,7 +15,6 @@ import { ImageCore } from "@/domains/ui/index";
 import { Result } from "@/domains/result/index";
 
 import { client } from "./request";
-import { user } from "./user";
 import { storage } from "./storage";
 import { PageKeys, routes } from "./routes";
 
@@ -24,11 +27,19 @@ onCreateRequest((ins) => {
       text: [e.message],
     });
   });
-  ins.client = client;
+  if (!ins.client) {
+    ins.client = client;
+  }
 });
 onCreateScrollView((ins) => ins.os === app.env);
 
 const router = new NavigatorCore();
+class ExtendsUser extends UserCore {
+  say() {
+    console.log(`My name is ${this.username}`);
+  }
+}
+const user = new ExtendsUser(storage.get("user"), client);
 const view = new RouteViewCore({
   name: "root" as PageKeys,
   pathname: "/",
@@ -46,7 +57,15 @@ export const history = new HistoryCore<PageKeys, RouteConfig<PageKeys>>({
     root: view,
   } as Record<PageKeys, RouteViewCore>,
 });
-export const app = new Application({
+class ExtendsApplication<T extends { storage: StorageCore<any> }> extends Application<T> {
+  hideCursor() {
+    document.documentElement.style.cursor = "none";
+  }
+  showCursor(type: "default" = "default") {
+    document.documentElement.style.cursor = type;
+  }
+}
+export const app = new ExtendsApplication({
   user,
   storage,
   async beforeReady() {

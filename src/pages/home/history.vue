@@ -6,8 +6,8 @@ import ListView from "@/components/ui/ListView.vue";
 import ScrollView from "@/components/ui/ScrollView.vue";
 import LazyImage from "@/components/ui/Image.vue";
 import AspectRatio from "@/components/ui/AspectRatio.vue";
+import { fetchPlayingHistories, fetchPlayingHistoriesProcess, PlayHistoryItem } from "@/biz/media/services";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
-import { fetchPlayingHistories, fetchPlayingHistoriesProcess, PlayHistoryItem } from "@/domains/media/services";
 import { MediaTypes } from "@/constants";
 import { ImageInListCore } from "@/domains/ui/image";
 import { ListCore } from "@/domains/list/index";
@@ -106,3 +106,4 @@ helper.init();
     </div>
   </ScrollView>
 </template>
+@/biz/media/services

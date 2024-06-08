@@ -125,7 +125,7 @@ function handleClickMessage(msg: { media?: { id: string; type: MediaTypes } }) {
 }
 function prepareSearch() {
   isSearching.value = true;
-  helper.init();
+  // helper.init();
 }
 function clearSearching() {
   console.log("[]isSearching.value", isSearching.value);

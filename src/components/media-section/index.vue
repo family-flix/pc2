@@ -12,12 +12,13 @@ import { RequestCore } from "@/domains/request/index";
 import { ImageInListCore } from "@/domains/ui/image";
 import { MediaTypes } from "@/constants/index";
 
-const { app, client, storage, history, title, params } = defineProps<
+const props = defineProps<
   { title: string; params: Record<string, string | number> } & Pick<
     ViewComponentProps,
     "app" | "client" | "storage" | "history"
   >
 >();
+const { app, client, storage, history, title, params } = props;
 defineComponent({
   LazyImage,
   AspectRatio,
@@ -87,20 +88,22 @@ seasonList.init();
           <div class="text-xl truncate">{{ media.name }}</div>
           <div class="">{{ media.air_date }}</div>
         </div>
-        <template v-if="media.episode_count_text">
-          <div className="absolute w-full top-2 right-2 flex flex-row-reverse items-center">
-            <div className="huizhang relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
-              {{ media.episode_count_text }}
+        <div class="absolute top-2 right-2 space-y-2">
+          <template v-if="media.vote">
+            <div className="flex flex-row-reverse items-center w-full ">
+              <div className="huizhang huizhang--blue relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
+                {{ media.vote }}
+              </div>
             </div>
-          </div>
-        </template>
-        <template v-if="media.vote">
-          <div className="absolute w-full top-8 right-2 flex flex-row-reverse items-center">
-            <div className="huizhang huizhang--blue relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
-              {{ media.vote }}
+          </template>
+          <template v-if="media.episode_count_text">
+            <div className="flex flex-row-reverse items-center w-full">
+              <div className="huizhang relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
+                {{ media.episode_count_text }}
+              </div>
             </div>
-          </div>
-        </template>
+          </template>
+        </div>
       </div>
     </div>
   </div>
