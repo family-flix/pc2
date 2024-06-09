@@ -108,11 +108,15 @@ const SUBTITLE_PARSER_MAP: Record<SubtitleFileSuffix, (content: string) => Subti
       return [];
     }
     const c = content.replace(/WEBVTT/, "");
-    const oriParagraphs = c.split("\n\n").filter(Boolean);
-    //     console.log("[DOMAIN]subtitle/utils - vtt", oriParagraphs);
+    const oriParagraphs = c
+      .split("\n\n")
+      .filter(Boolean)
+      .filter((v) => v !== "\n");
+    // console.log("[DOMAIN]subtitle/utils - vtt", oriParagraphs);
     return oriParagraphs
       .map((paragraph, i) => {
         const [startAndEnd, ...texts] = paragraph.split("\n").filter(Boolean);
+        // console.log("[DOMAIN]subtitle/utils - vtt", startAndEnd);
         const [start, end] = startAndEnd.split(" --> ");
         const s = start.split(",")[0];
         const e = end.split(",")[0];

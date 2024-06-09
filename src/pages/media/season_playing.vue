@@ -2,7 +2,7 @@
 import { ref, defineComponent, onMounted, onUnmounted } from "vue";
 import { ArrowLeft, Layers, Play, Pause, FastForward, Rewind, SkipForward, Settings, Maximize } from "lucide-vue-next";
 import hotkeys from "hotkeys-js";
-import { CheckCheck, Minimize, Loader2 } from "lucide-vue-next";
+import { CheckCheck, Minimize, Loader2, Captions, CaptionsOff } from "lucide-vue-next";
 
 import { ViewComponentProps } from "@/store/types";
 import Video from "@/components/Video.vue";
@@ -20,20 +20,17 @@ import { DynamicContentCore } from "@/domains/ui/dynamic-content";
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { PresenceCore } from "@/domains/ui/presence";
 import { DialogCore } from "@/domains/ui/dialog";
+import { seconds_to_minute } from "@/utils/index";
 
 function SeasonPlayingPageLogic(props: ViewComponentProps) {
-  const { app, storage, client } = props;
+  const { app, storage, client, view } = props;
   const settings = storage.get("player_settings");
-
-  const $settings = new RefCore({
-    value: settings,
-  });
-  const { type: resolution, volume, rate } = settings;
+  const { type: resolution, volume, rate, skip } = settings;
   const $tv = new SeasonMediaCore({
     client,
     resolution,
   });
-  const $player = new PlayerCore({ app, volume, rate });
+  const $player = new PlayerCore({ app, volume, rate, skipTime: skip[view.query.id] });
   console.log("[PAGE]play - useInitialize");
 
   app.onHidden(() => {
@@ -127,7 +124,7 @@ function SeasonPlayingPageLogic(props: ViewComponentProps) {
     const { currentTime } = $tv;
     console.log("[PAGE]play - player.onCanPlay", $player.hasPlayed, currentTime);
     function applySettings() {
-      $player.setCurrentTime(currentTime);
+      $player.setCurrentTime(currentTime === 0 ? $player.theTimeSkip : currentTime);
       if (settings.rate) {
         $player.changeRate(Number(rate));
       }
@@ -230,6 +227,19 @@ function SeasonPlayingPageLogic(props: ViewComponentProps) {
   return {
     $tv,
     $player,
+    ready() {
+      $tv.fetchProfile(view.query.id);
+    },
+    changeSkipTime(v: number) {
+      $logic.$player.changeSkipTime(v);
+      const nextSkip = {
+        ...skip,
+        [view.query.id]: v,
+      };
+      storage.merge("player_settings", {
+        skip: nextSkip,
+      });
+    },
   };
 }
 class SeasonPlayingPageView {
@@ -244,6 +254,7 @@ class SeasonPlayingPageView {
   $subtitle = new PresenceCore({});
   $settings = new DialogCore();
   $episodes = new DialogCore();
+  $skip = new DialogCore();
   $resolution = new DialogCore();
   $source = new DialogCore();
   $rate = new DialogCore();
@@ -411,7 +422,7 @@ function handleClickElm(event: MouseEvent) {
     return;
   }
   // console.log("[PAGE]media/season_playing - handleClickElm", target);
-  const { elm } = target.dataset;
+  const { elm, value } = target.dataset;
   if (!elm) {
     return;
   }
@@ -438,16 +449,37 @@ function handleClickElm(event: MouseEvent) {
     $logic.$tv.playNextEpisode();
     return;
   }
-  if (elm === "source-menu") {
-    $page.$source.show();
-    return;
-  }
   if (elm === "episodes-menu") {
     $page.$episodes.show();
     return;
   }
+  if (elm === "source-menu") {
+    $page.$source.show();
+    return;
+  }
+  if (elm === "resolution-menu") {
+    $page.$resolution.show();
+    return;
+  }
+  if (elm === "subtitle-menu") {
+    if ($logic.$tv.$source.subtitle === null) {
+      return;
+    }
+    $logic.$player.toggleSubtitleVisible();
+    $logic.$tv.$source.toggleSubtitleVisible();
+    return;
+  }
   if (elm === "rate-menu") {
     $page.$rate.show();
+    return;
+  }
+  if (elm === "skip-menu") {
+    const currentTime = $logic.$tv.currentTime;
+    const v = Number(currentTime);
+    $logic.changeSkipTime(v);
+    app.tip({
+      text: [`设置片头跳过 ${seconds_to_minute(v)}`],
+    });
     return;
   }
   if (elm === "screen-menu") {
@@ -465,6 +497,11 @@ function handleClickElm(event: MouseEvent) {
       console.error(`Error attempting to enable full-screen mode: ${err.message}`);
     });
   }
+  // if (elm === "skip-item-menu") {
+  //   const v = Number(value);
+  //   $logic.changeSkipTime(v);
+  //   return;
+  // }
 }
 
 function handleMouseMove() {
@@ -484,19 +521,32 @@ onMounted(() => {
     $logic.$player.play();
     $page.hideControls();
   });
+  // hotkeys("*", () => {
+  //   console.log(hotkeys.getPressedKeyString()); //=> ['⌘', '⌃', '⇧', 'A', 'F']
+  // });
+  hotkeys("left", (event) => {
+    event.preventDefault();
+    $logic.$player.rewind(2);
+  });
+  hotkeys("right", (event) => {
+    event.preventDefault();
+    $logic.$player.speedUp(2);
+  });
   document.documentElement.addEventListener("mousemove", handleMouseMove);
 });
 onUnmounted(() => {
   document.documentElement.removeEventListener("mousemove", handleMouseMove);
+  $logic.$tv.destroy();
+  $logic.$player.destroy();
+  hotkeys.unbind("space");
+  hotkeys.unbind("left");
+  hotkeys.unbind("right");
 });
-$logic.$tv.fetchProfile(view.query.id);
+$logic.ready();
 </script>
 
 <template>
   <div ref="pageRef" class="relative w-full h-screen bg-[#000000]">
-    <!-- <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">
-      <ArrowLeft :size="32" />
-    </div> -->
     <div class="video flex items-center w-full h-full bg-[#000000]">
       <Video :store="$logic.$player"></Video>
     </div>
@@ -585,14 +635,32 @@ $logic.$tv.fetchProfile(view.query.id);
                   <Layers class="w-8 h-8" />
                   <div class="">选集</div>
                 </div>
-                <div class="relative p-2 rounded-md cursor-pointer" data-elm="source-menu" @click="handleClickElm">
-                  <div>切换源</div>
-                </div>
                 <div class="relative p-2 rounded-md cursor-pointer" data-elm="resolution-menu" @click="handleClickElm">
                   <div>{{ curSource?.typeText }}</div>
                 </div>
                 <div class="relative p-2 rounded-md cursor-pointer" data-elm="rate-menu" @click="handleClickElm">
                   <div>{{ playerState?.rate }}x</div>
+                </div>
+                <div class="relative p-2 rounded-md cursor-pointer" data-elm="skip-menu" @click="handleClickElm">
+                  <template v-if="playerState?.skipText">
+                    <div>片头跳过{{ playerState?.skipText }}</div>
+                  </template>
+                  <template v-else>
+                    <div>设置片头跳过时间</div>
+                  </template>
+                </div>
+                <template v-if="subtitleState">
+                  <div class="relative p-2 rounded-md cursor-pointer" data-elm="subtitle-menu" @click="handleClickElm">
+                    <template v-if="subtitleState.visible">
+                      <Captions class="w-8 h-8" />
+                    </template>
+                    <template v-else>
+                      <CaptionsOff class="w-8 h-8" />
+                    </template>
+                  </div>
+                </template>
+                <div class="relative p-2 rounded-md cursor-pointer" data-elm="source-menu" @click="handleClickElm">
+                  <div>切换源</div>
                 </div>
                 <div class="relative p-2 rounded-md cursor-pointer" data-elm="screen-menu" @click="handleClickElm">
                   <template v-if="!isFull">
@@ -673,6 +741,23 @@ $logic.$tv.fetchProfile(view.query.id);
         </div>
       </div>
     </Dialog>
+    <!-- <Dialog :store="$page.$skip">
+      <div class="relative box-border h-full safe-bottom">
+        <div class="space-y-2">
+          <template v-for="value in [10, 20, 25, 30, 40, 50]">
+            <div
+              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
+              data-elm="skip-item-menu"
+              :data-value="value"
+              @click="handleClickElm"
+            >
+              <div class="">{{ value }}秒</div>
+              <template v-if="playerState.skip === value"><CheckCheck :size="32" /></template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Dialog> -->
     <Dialog :store="$page.$source">
       <div class="relative box-border h-full safe-bottom">
         <div class="space-y-2">

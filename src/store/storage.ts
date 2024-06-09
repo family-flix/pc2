@@ -20,6 +20,7 @@ const DEFAULT_CACHE_VALUES = {
     rate: 1,
     volume: 0.5,
     type: MediaResolutionTypes.SD,
+    skip: {} as Record<string, number>,
   },
   tv_search: {
     language: [] as string[],

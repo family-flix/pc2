@@ -3,6 +3,7 @@ import { ScrollViewCore } from "@/domains/ui/index";
 import { HttpClientCore } from "@/domains/http_client/index";
 
 import { app, history } from "./index";
+import { storage } from "./storage";
 import { PageKeys } from "./routes";
 
 export type GlobalStorageValues = (typeof app.$storage)["values"];
@@ -11,7 +12,7 @@ export type ViewComponentProps = {
   history: typeof history;
   client: HttpClientCore;
   view: RouteViewCore;
-  storage: typeof app.$storage;
+  storage: typeof storage;
   pages: Omit<Record<PageKeys, any>, "root">;
   parent?: {
     view: RouteViewCore;

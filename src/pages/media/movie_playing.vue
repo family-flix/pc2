@@ -2,7 +2,7 @@
 import { ref, defineComponent, onMounted, onUnmounted } from "vue";
 import { ArrowLeft, Layers, Play, Pause, FastForward, Rewind, SkipForward, Settings, Maximize } from "lucide-vue-next";
 import hotkeys from "hotkeys-js";
-import { CheckCheck, Minimize, Loader2 } from "lucide-vue-next";
+import { CheckCheck, Minimize, Loader2, Captions, CaptionsOff } from "lucide-vue-next";
 
 import { ViewComponentProps } from "@/store/types";
 import Video from "@/components/Video.vue";
@@ -393,10 +393,12 @@ function handleClickElm(event: MouseEvent) {
     return;
   }
   if (elm === "screen") {
+    $page.toggleControls();
     if ($logic.$player.playing) {
       app.hideCursor();
+    } else {
+      app.showCursor();
     }
-    $page.toggleControls();
     return;
   }
   if (elm === "play-menu") {
@@ -415,8 +417,20 @@ function handleClickElm(event: MouseEvent) {
     $page.$source.show();
     return;
   }
+  if (elm === "resolution-menu") {
+    $page.$resolution.show();
+    return;
+  }
   if (elm === "rate-menu") {
     $page.$rate.show();
+    return;
+  }
+  if (elm === "subtitle-menu") {
+    if ($logic.$tv.$source.subtitle === null) {
+      return;
+    }
+    $logic.$player.toggleSubtitleVisible();
+    $logic.$tv.$source.toggleSubtitleVisible();
     return;
   }
   if (elm === "screen-menu") {
@@ -452,19 +466,29 @@ onMounted(() => {
     $logic.$player.play();
     $page.hideControls();
   });
+  hotkeys("left", (event) => {
+    event.preventDefault();
+    $logic.$player.rewind(2);
+  });
+  hotkeys("right", (event) => {
+    event.preventDefault();
+    $logic.$player.speedUp(2);
+  });
   document.documentElement.addEventListener("mousemove", handleMouseMove);
 });
 onUnmounted(() => {
   document.documentElement.removeEventListener("mousemove", handleMouseMove);
+  $logic.$tv.destroy();
+  $logic.$player.destroy();
+  hotkeys.unbind("space");
+  hotkeys.unbind("left");
+  hotkeys.unbind("right");
 });
 $logic.$tv.fetchProfile(view.query.id);
 </script>
 
 <template>
   <div ref="pageRef" class="relative w-full h-screen bg-[#000000]">
-    <!-- <div class="absolute top-4 left-4 text-white cursor-pointer" style="z-index: 100" @click="back">
-      <ArrowLeft :size="32" />
-    </div> -->
     <div class="video flex items-center w-full h-full bg-[#000000]">
       <Video :store="$logic.$player"></Video>
     </div>
@@ -476,7 +500,7 @@ $logic.$tv.fetchProfile(view.query.id);
         >
           <div class="absolute z-10 inset-0 opacity-80 bg-gradient-to-b to-transparent from-w-black"></div>
           <div class="relative z-20 p-4 text-w-white" @click.stop>
-            <div class="flex items-center cursor-pointer" data-elm="arrow-left" @click="handleClickElm">
+            <div class="flex items-center cursor-pointer" data-elm="arrow-left-menu" @click="handleClickElm">
               <div class="inline-template p-4">
                 <ArrowLeft class="w-12 h-12" />
               </div>
@@ -535,36 +559,26 @@ $logic.$tv.fetchProfile(view.query.id);
                 </template>
               </div>
               <div class="flex items-center space-x-4">
-                <div
-                  class="relative p-2 rounded-md cursor-pointer"
-                  data-elm="source-menu"
-                  @click="handleClickElm"
-                  @mouseup.stop
-                >
-                  <div>切换源</div>
-                </div>
-                <div
-                  class="relative p-2 rounded-md cursor-pointer"
-                  data-elm="resolution-menu"
-                  @click="handleClickElm"
-                  @mouseup.stop
-                >
+                <div class="relative p-2 rounded-md cursor-pointer" data-elm="resolution-menu" @click="handleClickElm">
                   <div>{{ curSource?.typeText }}</div>
                 </div>
-                <div
-                  class="relative p-2 rounded-md cursor-pointer"
-                  data-elm="rate-menu"
-                  @click="handleClickElm"
-                  @mouseup.stop
-                >
+                <div class="relative p-2 rounded-md cursor-pointer" data-elm="rate-menu" @click="handleClickElm">
                   <div>{{ playerState?.rate }}x</div>
                 </div>
-                <div
-                  class="relative p-2 rounded-md cursor-pointer"
-                  data-elm="screen-menu"
-                  @click="handleClickElm"
-                  @mouseup.stop
-                >
+                <template v-if="subtitleState">
+                  <div class="relative p-2 rounded-md cursor-pointer" data-elm="subtitle-menu" @click="handleClickElm">
+                    <template v-if="subtitleState.visible">
+                      <Captions class="w-8 h-8" />
+                    </template>
+                    <template v-else>
+                      <CaptionsOff class="w-8 h-8" />
+                    </template>
+                  </div>
+                </template>
+                <div class="relative p-2 rounded-md cursor-pointer" data-elm="source-menu" @click="handleClickElm">
+                  <div>切换源</div>
+                </div>
+                <div class="relative p-2 rounded-md cursor-pointer" data-elm="screen-menu" @click="handleClickElm">
                   <template v-if="!isFull">
                     <Maximize class="w-8 h-8" />
                   </template>
