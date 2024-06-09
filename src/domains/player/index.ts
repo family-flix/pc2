@@ -196,7 +196,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       subtitle: this.subtitle,
       prepareFullscreen: this.prepareFullscreen,
       skip: this.theTimeSkip,
-      skipText: seconds_to_minute(this.theTimeSkip),
+      skipText: this.theTimeSkip ? seconds_to_minute(this.theTimeSkip) : "",
     };
   }
 
