@@ -21,6 +21,7 @@
     "mitt": "^3.0.0",
     "nzh": "^1.0.9",
     "path-to-regexp": "^6.2.1",
+    "proxy-compare": "^3.0.0",
     "qs": "^6.11.2",
     "tailwind-merge": "^1.13.2",
     "tailwindcss-animate": "^1.0.7",

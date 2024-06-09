@@ -35,6 +35,9 @@ dependencies:
   path-to-regexp:
     specifier: ^6.2.1
     version: 6.2.1
+  proxy-compare:
+    specifier: ^3.0.0
+    version: 3.0.0
   qs:
     specifier: ^6.11.2
     version: 6.11.2
@@ -1760,6 +1763,10 @@ packages:
       ansi-styles: 5.2.0
       react-is: 18.3.1
     dev: true
+
+  /proxy-compare@3.0.0:
+    resolution: {integrity: sha512-y44MCkgtZUCT9tZGuE278fB7PWVf7fRYy0vbRXAts2o5F0EfC4fIQrvQQGBJo1WJbFcVLXzApOscyJuZqHQc1w==}
+    dev: false
 
   /proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
