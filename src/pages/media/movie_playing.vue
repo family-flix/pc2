@@ -514,19 +514,6 @@ $logic.$tv.fetchProfile(view.query.id);
         </Presence>
       </div>
       <div class="absolute bottom-0 w-full safe-bottom">
-        <Presence :store="$page.$subtitle">
-          <template v-if="subtitleState === null"> </template>
-          <template v-else-if="!subtitleState.visible"></template>
-          <template v-else>
-            <div class="mb-8 space-y-1">
-              <template v-for="text in subtitleState.texts">
-                <div class="text-center text-lg">
-                  {{ text }}
-                </div>
-              </template>
-            </div>
-          </template>
-        </Presence>
         <Presence
           :store="$page.$bottom"
           class="animate-in fade-in slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:fade-out"

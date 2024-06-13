@@ -572,22 +572,6 @@ $logic.ready();
         </Presence>
       </div>
       <div class="absolute bottom-0 w-full safe-bottom">
-        <Presence :store="$page.$subtitle">
-          <template v-if="subtitleState === null"> </template>
-          <template v-else-if="!subtitleState.visible"></template>
-          <template v-else>
-            <div class="relative mb-4 space-y-1 p-2">
-              <div class="absolute z-10 bg-black opacity-50"></div>
-              <div class="relative z-20">
-                <template v-for="text in subtitleState.texts">
-                  <div class="text-center text-white text-2xl dark:text-white">
-                    {{ text }}
-                  </div>
-                </template>
-              </div>
-            </div>
-          </template>
-        </Presence>
         <Presence
           :store="$page.$bottom"
           class="animate-in fade-in slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:fade-out"
