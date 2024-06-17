@@ -725,23 +725,6 @@ $logic.ready();
         </div>
       </div>
     </Dialog>
-    <!-- <Dialog :store="$page.$skip">
-      <div class="relative box-border h-full safe-bottom">
-        <div class="space-y-2">
-          <template v-for="value in [10, 20, 25, 30, 40, 50]">
-            <div
-              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
-              data-elm="skip-item-menu"
-              :data-value="value"
-              @click="handleClickElm"
-            >
-              <div class="">{{ value }}秒</div>
-              <template v-if="playerState.skip === value"><CheckCheck :size="32" /></template>
-            </div>
-          </template>
-        </div>
-      </div>
-    </Dialog> -->
     <Dialog :store="$page.$source">
       <div class="relative box-border h-full safe-bottom">
         <div class="space-y-2">

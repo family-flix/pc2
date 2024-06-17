@@ -1,4 +1,5 @@
 import { Handler, BaseDomain } from "@/domains/base";
+import { media_request } from "@/biz/requests/index";
 import { HttpClientCore } from "@/domains/http_client/index";
 import { Result } from "@/domains/result/index";
 import { MediaOriginCountry } from "@/constants/index";
@@ -51,7 +52,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
       }
       if (type === SubtitleFileTypes.LocalFile) {
         try {
-          const r = await client.fetch<string>({ url, method: "GET" });
+          const r = await client.fetch<string>({ url: [media_request.getHostname(), url].join(""), method: "GET" });
           return Result.Ok({
             name,
             content: r.data,
@@ -69,7 +70,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
     const { content, name: subtitle_name } = content_res.data;
     const suffix = parseSubtitleUrl(subtitle_name);
     const paragraphs = parseSubtitleContent(content, suffix);
-    console.log("[DOMAIN]subtitle/index - paragraphs", paragraphs);
+    // console.log("[DOMAIN]subtitle/index - paragraphs", paragraphs);
     const store = new SubtitleCore({
       filename: subtitle_name,
       language,
@@ -152,7 +153,7 @@ export class SubtitleCore extends BaseDomain<TheTypesOfEvents> {
       this.emit(Events.StateChange, { ...this.state });
       this.changeTargetLine(currentTime);
     }
-    console.log("[DOMAIN]subtitle/index - handleTimeChange after this.changeTargetLine", this.targetLine);
+    // console.log("[DOMAIN]subtitle/index - handleTimeChange after this.changeTargetLine", this.targetLine);
     this.curTime = currentTime;
     if (!this.targetLine) {
       return;
