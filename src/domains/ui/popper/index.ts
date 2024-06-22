@@ -173,7 +173,7 @@ export class PopperCore extends BaseDomain<TheTypesOfEvents> {
   setConfig(config: { placement?: Placement; strategy?: Strategy }) {}
   /** 计算浮动元素位置 */
   async place() {
-    console.log('[DOMAIN/ui]popper/index - place', this.reference, this.floating);
+    console.log("[DOMAIN/ui]popper/index - place", this.reference?.getRect(), this.floating);
     // console.log(...this.log("place", this.reference, this.floating));
     this.middleware = [
       // arrow({
@@ -198,7 +198,7 @@ export class PopperCore extends BaseDomain<TheTypesOfEvents> {
       placedAlign,
       reference: true,
     };
-    console.log(...this.log("place - before emit placed", { x, y }));
+    console.log(...this.log("[DOMAIN]ui/popper - place - before emit placed", { x, y }));
     this.emit(Events.StateChange, {
       ...this.state,
     });

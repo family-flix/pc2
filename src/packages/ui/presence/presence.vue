@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {  ref } from "vue";
+import { ref } from "vue";
 
 import { PresenceCore } from "@/domains/ui";
 import { cn } from "@/utils/index";
@@ -12,16 +12,12 @@ const { store, enterClassName, exitClassName, className } = defineProps<{
 }>();
 
 const state = ref(store.state);
-const cx = cn(
+const cls = cn(
   "presence",
   state.value.enter && enterClassName ? enterClassName : "",
   state.value.exit && exitClassName ? exitClassName : "",
   className
 );
-
-function handleAnimationEnd() {
-  store.unmount();
-}
 
 store.onStateChange((v) => {
   state.value = v;
@@ -30,12 +26,7 @@ store.onStateChange((v) => {
 
 <template>
   <template v-if="state.mounted">
-    <div
-      :class="cx"
-      role="presentation"
-      :data-state="state.visible ? 'open' : 'closed'"
-      @animationend="handleAnimationEnd"
-    >
+    <div :class="cls" role="presentation" :style="{ display: state.visible ? 'block' : 'none' }">
       <slot></slot>
     </div>
   </template>

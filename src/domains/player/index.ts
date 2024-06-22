@@ -17,6 +17,7 @@ enum MediaResolutionTypes {
   /** 超高清 */
   FHD = "FHD",
 }
+export const MediaRateOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 enum Events {
   Mounted,

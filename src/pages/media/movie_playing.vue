@@ -8,11 +8,11 @@ import { ViewComponentProps } from "@/store/types";
 import Video from "@/components/Video.vue";
 import PlayerProgressBar from "@/components/player-progress-bar/index.vue";
 import Presence from "@/components/ui/Presence.vue";
-import Dialog from "@/components/ui/Dialog.vue";
+import Popover from "@/components/ui/TipMenu.vue";
 import { MovieMediaCore } from "@/biz/media/movie";
 import { createVVTSubtitle } from "@/biz/subtitle/utils";
 import { MediaResolutionTypes } from "@/biz/source/constants";
-import { PlayerCore } from "@/domains/player";
+import { PlayerCore, MediaRateOptions } from "@/domains/player";
 import { RefCore } from "@/domains/cur";
 import { OrientationTypes } from "@/domains/app";
 import { RouteViewCore } from "@/domains/route_view";
@@ -20,6 +20,7 @@ import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { PresenceCore } from "@/domains/ui/presence";
 import { DialogCore } from "@/domains/ui/dialog";
 import { DynamicContentCore } from "@/domains/ui/dynamic-content";
+import { PopoverCore } from "@/domains/ui";
 
 function MoviePlayingPageLogic(props: ViewComponentProps) {
   const { app, client, storage } = props;
@@ -225,10 +226,18 @@ class MoviePlayingPageView {
   $time = new PresenceCore({});
   $subtitle = new PresenceCore({});
   $settings = new DialogCore();
-  $resolution = new DialogCore();
-  $source = new DialogCore();
-  $rate = new DialogCore();
-
+  $resolutionMenu = new PopoverCore({
+    align: "center",
+    side: "top",
+  });
+  $sourceMenu = new PopoverCore({
+    align: "center",
+    side: "top",
+  });
+  $rateMenu = new PopoverCore({
+    align: "center",
+    side: "top",
+  });
   $episode = new DynamicContentCore({
     value: 1,
   });
@@ -251,16 +260,16 @@ class MoviePlayingPageView {
   }
   hideControls() {
     app.hideCursor();
-    this.$top.hide();
-    this.$bottom.hide();
-    this.$control.hide();
-    this.$mask.hide();
+    this.$top.hide({ destroy: false });
+    this.$bottom.hide({ destroy: false });
+    this.$control.hide({ destroy: false });
+    this.$mask.hide({ destroy: false });
   }
   toggleControls() {
-    this.$top.toggle();
-    this.$bottom.toggle();
-    this.$control.toggle();
-    this.$mask.toggle();
+    this.$top.toggle({ destroy: false });
+    this.$bottom.toggle({ destroy: false });
+    this.$control.toggle({ destroy: false });
+    this.$mask.toggle({ destroy: false });
   }
   attemptToShowControls() {
     if (this.timer !== null) {
@@ -410,19 +419,13 @@ function handleClickElm(event: MouseEvent) {
     return;
   }
   if (elm === "arrow-left-menu") {
+    console.log("history.$router.histories.length", history.$router.histories.length);
+    if (history.$router.histories.length === 0) {
+      history.clear();
+      history.push("root.home_layout.home_index", {});
+      return;
+    }
     history.back();
-    return;
-  }
-  if (elm === "source-menu") {
-    $page.$source.show();
-    return;
-  }
-  if (elm === "resolution-menu") {
-    $page.$resolution.show();
-    return;
-  }
-  if (elm === "rate-menu") {
-    $page.$rate.show();
     return;
   }
   if (elm === "subtitle-menu") {
@@ -545,13 +548,57 @@ $logic.$tv.fetchProfile(view.query.id);
                   </div>
                 </template>
               </div>
-              <div class="flex items-center space-x-4">
-                <div class="relative p-2 rounded-md cursor-pointer" data-elm="resolution-menu" @click="handleClickElm">
-                  <div>{{ curSource?.typeText }}</div>
-                </div>
-                <div class="relative p-2 rounded-md cursor-pointer" data-elm="rate-menu" @click="handleClickElm">
-                  <div>{{ playerState?.rate }}x</div>
-                </div>
+              <div class="relative flex items-center space-x-4">
+                <Popover :store="$page.$resolutionMenu" class-name="">
+                  <template v-slot:trigger>
+                    <div class="relative p-2 rounded-md cursor-pointer">
+                      <div>{{ curSource?.typeText }}</div>
+                    </div>
+                  </template>
+                  <template v-slot:content>
+                    <div class="z-10 relative rounded-md">
+                      <div class="space-y-2">
+                        <template v-for="resolution in curSource?.resolutions">
+                          <div
+                            :class="
+                              curSource?.type === resolution.type
+                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-200'
+                                : 'relative p-2 rounded-sm text-center cursor-pointer'
+                            "
+                            @click="changeResolution(resolution)"
+                          >
+                            <div class="">{{ resolution.typeText }}</div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </Popover>
+                <Popover :store="$page.$rateMenu" class-name="">
+                  <template v-slot:trigger>
+                    <div class="relative p-2 rounded-md cursor-pointer">
+                      <div>{{ playerState.rate }}x</div>
+                    </div>
+                  </template>
+                  <template v-slot:content>
+                    <div class="rounded-md">
+                      <div class="space-y-2">
+                        <template v-for="rate in MediaRateOptions">
+                          <div
+                            :class="
+                              playerState.rate === rate
+                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-200'
+                                : 'relative p-2 rounded-sm text-center cursor-pointer'
+                            "
+                            @click="changeRate(rate)"
+                          >
+                            <div class="">{{ rate }}</div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </Popover>
                 <template v-if="subtitleState">
                   <div class="relative p-2 rounded-md cursor-pointer" data-elm="subtitle-menu" @click="handleClickElm">
                     <template v-if="subtitleState.visible">
@@ -562,9 +609,31 @@ $logic.$tv.fetchProfile(view.query.id);
                     </template>
                   </div>
                 </template>
-                <div class="relative p-2 rounded-md cursor-pointer" data-elm="source-menu" @click="handleClickElm">
-                  <div>切换源</div>
-                </div>
+                <Popover :store="$page.$sourceMenu" class-name="">
+                  <template v-slot:trigger>
+                    <div class="relative p-2 rounded-md cursor-pointer">
+                      <div>切换源</div>
+                    </div>
+                  </template>
+                  <template v-slot:content>
+                    <div class="rounded-md">
+                      <div class="space-y-2">
+                        <template v-for="file in profile.curSource?.files">
+                          <div
+                            :class="
+                              profile.curSource?.curFileId === file.id
+                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-200'
+                                : 'relative p-2 rounded-sm text-center cursor-pointer'
+                            "
+                            @click="changeSourceFile(file)"
+                          >
+                            <div class="">{{ file.name }}</div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </Popover>
                 <div class="relative p-2 rounded-md cursor-pointer" data-elm="screen-menu" @click="handleClickElm">
                   <template v-if="!isFull">
                     <Maximize class="w-8 h-8" />
@@ -579,52 +648,6 @@ $logic.$tv.fetchProfile(view.query.id);
         </Presence>
       </div>
     </div>
-    <Dialog :store="$page.$resolution">
-      <div class="relative box-border h-full safe-bottom">
-        <div class="space-y-2">
-          <template v-for="resolution in curSource?.resolutions">
-            <div
-              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
-              data-elm="resolution"
-              @click="changeResolution(resolution)"
-            >
-              <div class="">{{ resolution.typeText }}</div>
-              <template v-if="curSource?.type === resolution.type"><CheckCheck :size="32" /></template>
-            </div>
-          </template>
-        </div>
-      </div>
-    </Dialog>
-    <Dialog :store="$page.$rate">
-      <div class="relative box-border h-full safe-bottom">
-        <div class="space-y-2">
-          <template v-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]">
-            <div
-              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
-              @click="changeRate(rate)"
-            >
-              <div class="">{{ rate }}x</div>
-              <template v-if="playerState.rate === rate"><CheckCheck :size="32" /></template>
-            </div>
-          </template>
-        </div>
-      </div>
-    </Dialog>
-    <Dialog :store="$page.$source">
-      <div class="relative box-border h-full safe-bottom">
-        <div class="space-y-2">
-          <template v-for="file in profile.curSource?.files">
-            <div
-              :class="'relative flex items-center justify-between p-4 rounded-md bg-w-fg-3 cursor-pointer'"
-              @click="changeSourceFile(file)"
-            >
-              <div class="">{{ file.name }}</div>
-              <template v-if="profile.curSource?.curFileId === file.id"><CheckCheck :size="32" /></template>
-            </div>
-          </template>
-        </div>
-      </div>
-    </Dialog>
   </div>
 </template>
 

@@ -8,7 +8,7 @@ import PopoverPrimitivePortal from "@/packages/ui/popover/portal.vue";
 import PopoverPrimitiveContent from "@/packages/ui/popover/content.vue";
 import PopoverPrimitiveClose from "@/packages/ui/popover/close.vue";
 import { PopoverCore } from "@/domains/ui/popover";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 
 const { store, className } = defineProps<{ store: PopoverCore; className: string }>();
 const state = ref(store.state);

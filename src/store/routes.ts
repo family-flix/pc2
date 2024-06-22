@@ -19,8 +19,6 @@ const configure = {
           animation: {
             in: "slide-in-from-right",
             out: "slide-out-to-right",
-            show: "",
-            hide: "",
           },
           require: ["login"],
         },
@@ -40,8 +38,6 @@ const configure = {
               animation: {
                 in: "slide-in-from-right",
                 out: "slide-out-to-right",
-                show: "fade-in",
-                hide: "fade-out",
               },
               require: [],
             },
@@ -50,22 +46,9 @@ const configure = {
             title: "观看记录",
             pathname: "/home/history",
             options: {
-              require: [],
+              require: ["login"],
             },
           },
-          // messages: {
-          //   title: "消息",
-          //   pathname: "/home/message",
-          //   options: {
-          //     keep_alive: true,
-          //     animation: {
-          //       in: "slide-in-from-right",
-          //       out: "slide-out-to-right",
-          //       show: "slide-in-from-right",
-          //       hide: "slide-out-to-right",
-          //     },
-          //   },
-          // },
           mine: {
             title: "我的",
             pathname: "/home/mine",
@@ -74,12 +57,8 @@ const configure = {
               animation: {
                 in: "slide-in-from-right",
                 out: "slide-out-to-right",
-                show: "slide-in",
-                hide: "slide-out",
-                // show: "slide-in-from-right",
-                // hide: "slide-out-to-right",
               },
-              require: [],
+              require: ["login"],
             },
           },
         },
@@ -90,10 +69,8 @@ const configure = {
         options: {
           keep_alive: true,
           animation: {
-            in: "slide-in-from-right",
-            out: "slide-out-to-right",
-            show: "slide-in-from-right",
-            hide: "slide-out-to-right",
+            in: "fade-in",
+            out: "fade-out",
           },
           require: ["login"],
         },
@@ -103,16 +80,13 @@ const configure = {
         pathname: "/movie_play",
         options: {
           keep_alive: true,
+          animation: {
+            in: "fade-in",
+            out: "fade-out",
+          },
           require: ["login"],
         },
       },
-      // history_updated: {
-      //   title: "我的",
-      //   pathname: "/home/updated_history",
-      //   options: {
-      //     keep_alive: true,
-      //   },
-      // },
       login: {
         title: "登录",
         pathname: "/login",

@@ -17,7 +17,6 @@ const state = ref(image.state);
 const imgRef = ref();
 
 image.onStateChange((nextState) => {
-  console.log("[COMPONENT]LazyImage - image.onStateChange", nextState);
   state.value = nextState;
 });
 onMounted(() => {

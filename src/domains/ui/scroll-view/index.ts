@@ -3,7 +3,7 @@ import { BaseDomain, Handler } from "@/domains/base";
 import { getPoint, damping, preventDefault, getAngleByPoints } from "./utils";
 
 let handler: null | ((v: ScrollViewCore) => void) = null;
-export function onCreate(h: (v: ScrollViewCore) => void) {
+export function onCreateScrollView(h: (v: ScrollViewCore) => void) {
   handler = h;
 }
 

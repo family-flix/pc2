@@ -11,23 +11,13 @@ import ListView from "@/components/ui/ListView.vue";
 import Input from "@/components/ui/Input.vue";
 import AspectRatio from "@/components/ui/AspectRatio.vue";
 import LazyImage from "@/components/ui/Image.vue";
-import Popover from "@/components/ui/popover/index.vue";
+import Popover from "@/components/ui/Popover.vue";
 import PageFooter from "@/components/footer/index.vue";
 import HistoryPanel from "@/components/history-panel/index.vue";
-import { RouteViewCore } from "@/domains/route_view";
 import KeepAliveView from "@/components/ui/KeepAliveView.vue";
-import DropdownMenu from "@/components/ui/dropdown-menu/index.vue";
 import { ListCore } from "@/domains/list/index";
 import { RequestCore } from "@/domains/request/index";
-import {
-  ButtonCore,
-  DropdownMenuCore,
-  ImageInListCore,
-  InputCore,
-  MenuItemCore,
-  PopoverCore,
-  ScrollViewCore,
-} from "@/domains/ui";
+import { ButtonCore, ImageInListCore, InputCore, PopoverCore, ScrollViewCore } from "@/domains/ui";
 import { MovieGenresOptions, MovieOriginCountryOptions, RecentlyYearOptions, MediaTypes } from "@/constants/index";
 
 const { app, view, client, pages, history } = defineProps<ViewComponentProps>();

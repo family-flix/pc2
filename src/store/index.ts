@@ -1,6 +1,7 @@
 import hotkeys from "hotkeys-js";
 
 import { fetchInfo, fetchNotifications, fetchNotificationsProcess } from "@/services/index";
+import { media_request } from "@/biz/requests";
 import { UserCore } from "@/biz/user";
 import { Application } from "@/domains/app/index";
 import { ListCore } from "@/domains/list/index";
@@ -9,29 +10,22 @@ import { RouteViewCore } from "@/domains/route_view/index";
 import { StorageCore } from "@/domains/storage/index";
 import { RouteConfig } from "@/domains/route_view/utils";
 import { HistoryCore } from "@/domains/history/index";
-import { onCreate as onCreateScrollView } from "@/domains/ui/scroll-view";
+import { connect as connectApplication } from "@/domains/app/connect.web";
+import { connect as connectHistory } from "@/domains/history/connect.web";
+import { onCreateScrollView } from "@/domains/ui/scroll-view";
 import { RequestCore, onCreate as onCreateRequest } from "@/domains/request/index";
 import { ImageCore } from "@/domains/ui/index";
 import { Result } from "@/domains/result/index";
 
 import { client } from "./request";
 import { storage } from "./storage";
-import { PageKeys, routes } from "./routes";
+import { PageKeys, routes, routesWithPathname } from "./routes";
 
+if (window.location.hostname === "media-t.funzm.com") {
+  media_request.setEnv("dev");
+}
 NavigatorCore.prefix = import.meta.env.BASE_URL;
 ImageCore.setPrefix(window.location.origin);
-
-onCreateRequest((ins) => {
-  ins.onFailed((e) => {
-    app.tip({
-      text: [e.message],
-    });
-  });
-  if (!ins.client) {
-    ins.client = client;
-  }
-});
-onCreateScrollView((ins) => ins.os === app.env);
 
 const router = new NavigatorCore();
 class ExtendsUser extends UserCore {
@@ -69,47 +63,98 @@ export const app = new ExtendsApplication({
   user,
   storage,
   async beforeReady() {
-    const {} = router.query;
+    const { pathname, query } = history.$router;
+    const route = routesWithPathname[pathname];
+    console.log("[ROOT]onMount", pathname, route, app.$user.isLogin);
+    if (!route) {
+      history.push("root.notfound");
+      return Result.Err("not found");
+    }
+    if (!route.options?.require?.includes("login")) {
+      if (!history.isLayout(route.name)) {
+        // 页面无需登录
+        history.push(route.name, query, { ignore: true });
+        return Result.Ok(null);
+      }
+      return Result.Err("can't goto layout");
+    }
     await user.loginWithTokenId({ token: router.query.token, tmp: Number(router.query.tmp) });
     if (!user.isLogin) {
-      // app.emit(Application.Events.Error, new Error("请先登录"));
+      app.tip({
+        text: ["请先登录"],
+      });
+      history.push("root.login", { redirect: route.pathname });
+      return Result.Err("need login");
+    }
+    client.appendHeaders({
+      Authorization: app.$user.token,
+    });
+    media_request.appendHeaders({
+      Authorization: app.$user.token,
+    });
+    messageList.init();
+    if (!history.isLayout(route.name)) {
+      history.push(route.name, query, { ignore: true });
       return Result.Ok(null);
     }
-    // app.emit(Application.Events.Ready);
+    history.push("root.home_layout.home_index", {}, { ignore: true });
     return Result.Ok(null);
-    // if (!user.isLogin) {
-    // const r = await has_admin();
-    // if (r.error) {
-    //   return Result.Ok(null);
-    // }
-    // const { existing } = r.data;
-    // if (!existing) {
-    //   app.showView(registerPage);
-    //   user.needRegister = true;
-    //   return Result.Ok(null);
-    // }
-    // app.showView(loginPage);
-    // rootView.showSubView(loginPage);
-    // return Result.Ok(null);
-    // }
-
-    // await app.$user.validate();
-    // return Result.Ok(null);
   },
 });
 app.setEnv({
   prod: import.meta.env.PROD,
   dev: import.meta.env.DEV,
 });
+connectApplication(app);
+connectHistory(history);
+history.onClickLink(({ href, target }) => {
+  const { pathname, query } = NavigatorCore.parse(href);
+  const route = routesWithPathname[pathname];
+  // console.log("[ROOT]history.onClickLink", pathname, query, route);
+  if (!route) {
+    app.tip({
+      text: ["没有匹配的页面"],
+    });
+    return;
+  }
+  if (target === "_blank") {
+    const u = history.buildURLWithPrefix(route.name, query);
+    window.open(u);
+    return;
+  }
+  history.push(route.name, query);
+  return;
+});
+history.onRouteChange(({ ignore, reason, view, href }) => {
+  console.log("[ROOT]rootView.onRouteChange", href, history.$router.href);
+  const { title } = view;
+  app.setTitle(title);
+  if (ignore) {
+    return;
+  }
+  if (app.env.ios) {
+    return;
+  }
+  if (reason === "push") {
+    history.$router.pushState(href);
+  }
+  if (reason === "replace") {
+    history.$router.replaceState(href);
+  }
+});
 user.onLogin((profile) => {
   client.appendHeaders({
+    Authorization: user.token,
+  });
+  media_request.appendHeaders({
     Authorization: user.token,
   });
   storage.set("user", profile);
 });
 user.onLogout(() => {
   storage.clear("user");
-  // router.push("/login");
+  media_request.deleteHeaders("Authorization");
+  history.push("root.login");
 });
 user.onExpired(() => {
   storage.clear("user");
@@ -124,7 +169,20 @@ user.onTip((msg) => {
 user.onNeedUpdate(() => {
   app.tipUpdate();
 });
-
+onCreateRequest((ins) => {
+  ins.onFailed((e) => {
+    app.tip({
+      text: [e.message],
+    });
+    if (e.code === 900) {
+      history.push("root.login");
+    }
+  });
+  if (!ins.client) {
+    ins.client = client;
+  }
+});
+onCreateScrollView((ins) => ins.os === app.env);
 export const messageList = new ListCore(
   new RequestCore(fetchNotifications, {
     process: fetchNotificationsProcess,

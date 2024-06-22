@@ -2,24 +2,28 @@
 import { ref } from "vue";
 
 import { PresenceCore } from "@/domains/ui/presence";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 
-const props = defineProps<{
+const { store, enterClassName, exitClassName, className } = defineProps<{
   store: PresenceCore;
-  class?: string;
+  enterClassName?: string;
+  exitClassName?: string;
+  className?: string;
 }>();
-const { store } = props;
 const state = ref(store.state);
-const className = cn("relative", props.class);
+const cls = cn(
+  "presence",
+  state.value.enter && enterClassName ? enterClassName : "",
+  state.value.exit && exitClassName ? exitClassName : "",
+  className
+);
 
-store.onStateChange((nextState) => {
-  state.value = nextState;
-});
+store.onStateChange((v) => (state.value = v));
 </script>
 
 <template>
   <template v-if="state.mounted">
-    <div :class="props.class" role="presentation" :data-state="state.visible ? 'open' : 'closed'">
+    <div :class="cls" role="presentation" :style="{ display: state.visible ? 'block' : 'none' }">
       <slot></slot>
     </div>
   </template>
