@@ -15,6 +15,9 @@ async function handleAnimationEnd(event: AnimationEvent) {
   }
   console.log("[PACKAGE/ui]popper/anchor - onMounted", $anchor, $anchor.getBoundingClientRect());
   await sleep(200);
+  store.checkIsClickAnchor = (paths: unknown[]) => {
+    return false;
+  };
   store.setReference({
     getRect() {
       const rect = $anchor.getBoundingClientRect();

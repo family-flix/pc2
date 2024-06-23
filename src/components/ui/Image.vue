@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, watchEffect, ref } from "vue";
 import { ImageOff, Image } from "lucide-vue-next";
 
 import { ImageCore, ImageStep } from "@/domains/ui/image";
@@ -7,16 +7,15 @@ import { connect } from "@/domains/ui/image/connect.web";
 import { cn } from "@/utils/index";
 
 const props = defineProps<{ class?: string; store: ImageCore; src?: string; alt?: string }>();
-const { store: image, src } = props;
+const { store, src } = props;
 
 function handleError() {
-  image.handleError();
+  store.handleError();
 }
 
-const state = ref(image.state);
+const state = ref(store.state);
 const imgRef = ref();
-
-image.onStateChange((nextState) => {
+store.onStateChange((nextState) => {
   state.value = nextState;
 });
 onMounted(() => {
@@ -24,7 +23,7 @@ onMounted(() => {
   if (!$img) {
     return;
   }
-  connect($img, image);
+  connect($img, store);
 });
 const className = cn(props.class, "flex items-center justify-center text-w-fg-2 bg-w-bg-3");
 </script>

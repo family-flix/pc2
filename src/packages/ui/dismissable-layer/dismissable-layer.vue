@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { ref, onUnmounted, onMounted } from "vue";
+
 import { DismissableLayerCore } from "@/domains/ui";
-import { ref,  onUnmounted, onMounted } from "vue";
 
 const { store } = defineProps<{ store: DismissableLayerCore }>();
 const el = ref<HTMLDivElement>();
@@ -8,21 +9,21 @@ const timer = ref<number | null>(null);
 const node = ref({});
 
 const ownerDocument = globalThis?.document;
-const handlePointerDown = (event: PointerEvent) => {
-  console.log("handle click document", event.target);
+const handlePointerDown = (event: MouseEvent) => {
+  console.log("handle click document", event.target, event);
   if (!event.target) {
     return;
   }
   const f = () => {
     store.handlePointerDownOnTop();
   };
-  if (event.pointerType === "touch") {
-    ownerDocument.removeEventListener("click", f);
-    ownerDocument.addEventListener("click", f, {
-      once: true,
-    });
-    return;
-  }
+  // if (event.pointerType === "touch") {
+  //   ownerDocument.removeEventListener("click", f);
+  //   ownerDocument.addEventListener("click", f, {
+  //     once: true,
+  //   });
+  //   return;
+  // }
   store.handlePointerDownOnTop();
 };
 function handleElPointerDown() {
@@ -31,8 +32,8 @@ function handleElPointerDown() {
 onMounted(() => {
   store.layers.add(node.value);
   timer.value = window.setTimeout(() => {
-    console.log('register content of pointerdown');
-    ownerDocument.addEventListener("pointerdown", handlePointerDown);
+    console.log("register content of pointerdown");
+    ownerDocument.addEventListener("click", handlePointerDown);
   }, 0);
 });
 onUnmounted(() => {
@@ -41,7 +42,7 @@ onUnmounted(() => {
   if (timer.value !== null) {
     window.clearTimeout(timer.value);
   }
-  ownerDocument.removeEventListener("pointerdown", handlePointerDown);
+  ownerDocument.removeEventListener("click", handlePointerDown);
   ownerDocument.removeEventListener("click", store.handlePointerDownOnTop);
   // app.enablePointer();
 });

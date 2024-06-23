@@ -6,6 +6,7 @@ import { ref, onMounted } from "vue";
 
 import { ScrollViewCore } from "@/domains/ui/scroll-view";
 import { cn } from "@/utils";
+import { connectScroll } from "@/domains/ui/scroll-view/connect.web";
 
 const props = defineProps<{
   class?: string;
@@ -26,9 +27,8 @@ function handleScroll(event: Event) {
     contentHeight: $content.scrollHeight,
   });
   const target = event.currentTarget as HTMLDivElement;
-  // store.handleScroll({
-  //   scrollTop: target.scrollTop,
-  // });
+  if ($content.scrollTop + 120 >= $content.scrollHeight) {
+  }
 }
 
 // store.onStateChange((nextState) => {
@@ -40,6 +40,7 @@ onMounted(() => {
     return;
   }
   const { clientWidth, clientHeight, scrollHeight } = $content;
+  connectScroll(store, $content);
   store.setRect({
     width: clientWidth,
     height: clientHeight,
@@ -47,17 +48,12 @@ onMounted(() => {
   });
 });
 
-const className = cn("w-full h-full overflow-y-auto hide-scroll", props.class);
+const className = cn("scroll-view w-full h-full overflow-y-auto hide-scroll", props.class);
 </script>
 
 <template>
   <div :class="className">
-    <div
-      ref="contentRef"
-      :class="className"
-      :style="{ transform: `translateY(${state.top}px)` }"
-      @scroll="handleScroll"
-    >
+    <div ref="contentRef" :class="className">
       <slot></slot>
     </div>
   </div>

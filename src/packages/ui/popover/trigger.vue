@@ -6,7 +6,8 @@ import { PopoverCore } from "@/domains/ui/popover/index";
 
 const { store, className } = defineProps<{ store: PopoverCore; className: string }>();
 
-function handleClick() {
+function handleClick(event: MouseEvent) {
+  console.log("[PACKAGE]ui/popover - handleClick");
   store.toggle();
 }
 </script>

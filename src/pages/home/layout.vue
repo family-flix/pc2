@@ -223,21 +223,19 @@ view.onCurViewChange((nextCurView) => {
           <keep-alive-view
             v-for="(view, index) in subViews"
             key="id"
-            class-name="absolute inset-0 w-full h-full"
+            class-name="keep-alive-view absolute inset-0 w-full h-full overflow-y-auto bg-white opacity-100 dark:bg-black hide-scroll"
             :store="view"
             :index="index"
           >
-            <div class="w-full h-full scrollbar-hide overflow-y-auto bg-white opacity-100 dark:bg-black hide-scroll">
-              <component
-                :is="pages[view.name as Exclude<PageKeys, 'root'>]"
-                :app="app"
-                :history="history"
-                :client="client"
-                :storage="storage"
-                :pages="pages"
-                :view="view"
-              ></component>
-            </div>
+            <component
+              :is="pages[view.name as Exclude<PageKeys, 'root'>]"
+              :app="app"
+              :history="history"
+              :client="client"
+              :storage="storage"
+              :pages="pages"
+              :view="view"
+            ></component>
           </keep-alive-view>
         </div>
         <div :style="isSearching ? 'display: block; height: 100%;' : 'display: none; height: 100%;'">

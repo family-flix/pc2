@@ -171,6 +171,10 @@ export class PopperCore extends BaseDomain<TheTypesOfEvents> {
     this.arrow = arrow;
   }
   setConfig(config: { placement?: Placement; strategy?: Strategy }) {}
+  checkIsClickAnchor(paths: unknown[]) {
+    console.log("请实现 checkIsClickAnchor 方法");
+    return false;
+  }
   /** 计算浮动元素位置 */
   async place() {
     console.log("[DOMAIN/ui]popper/index - place", this.reference?.getRect(), this.floating);

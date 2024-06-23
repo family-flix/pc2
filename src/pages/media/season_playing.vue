@@ -260,14 +260,17 @@ class SeasonPlayingPageView {
   $resolutionMenu = new PopoverCore({
     align: "center",
     side: "top",
+    toBody: false,
   });
   $sourceMenu = new PopoverCore({
     align: "center",
     side: "top",
+    toBody: false,
   });
   $rateMenu = new PopoverCore({
     align: "center",
     side: "top",
+    toBody: false,
   });
 
   $episode = new DynamicContentCore({
@@ -284,6 +287,7 @@ class SeasonPlayingPageView {
   }
 
   showControls() {
+    this.visible = true;
     app.showCursor();
     this.$top.show();
     this.$bottom.show();
@@ -291,6 +295,7 @@ class SeasonPlayingPageView {
     this.$mask.show();
   }
   hideControls() {
+    this.visible = false;
     app.hideCursor();
     this.$top.hide({ destroy: false });
     this.$bottom.hide({ destroy: false });
@@ -298,10 +303,11 @@ class SeasonPlayingPageView {
     this.$mask.hide({ destroy: false });
   }
   toggleControls() {
-    this.$top.toggle({ destroy: false });
-    this.$bottom.toggle({ destroy: false });
-    this.$control.toggle({ destroy: false });
-    this.$mask.toggle({ destroy: false });
+    if (this.visible) {
+      this.hideControls();
+      return;
+    }
+    this.showControls();
   }
   attemptToShowControls() {
     if (this.timer !== null) {
@@ -438,9 +444,6 @@ function handleClickElm(event: MouseEvent) {
     return;
   }
   if (elm === "screen") {
-    if ($logic.$player.playing) {
-      app.hideCursor();
-    }
     $page.toggleControls();
     return;
   }
@@ -510,10 +513,10 @@ function handleClickElm(event: MouseEvent) {
 }
 
 function handleMouseMove() {
-  if ($logic.$player.playing) {
-    $page.showControls();
+  if ($page.visible === true) {
     return;
   }
+  $page.showControls();
 }
 onMounted(() => {
   hotkeys("space", (event, handler) => {
@@ -637,7 +640,7 @@ $logic.ready();
                           <div
                             :class="
                               curSource?.type === resolution.type
-                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-200'
+                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-800'
                                 : 'relative p-2 rounded-sm text-center cursor-pointer'
                             "
                             @click="changeResolution(resolution)"
@@ -662,7 +665,7 @@ $logic.ready();
                           <div
                             :class="
                               playerState.rate === rate
-                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-200'
+                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-800'
                                 : 'relative p-2 rounded-sm text-center cursor-pointer'
                             "
                             @click="changeRate(rate)"
@@ -705,7 +708,7 @@ $logic.ready();
                           <div
                             :class="
                               profile.curSource?.curFileId === file.id
-                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-200'
+                                ? 'relative p-2 rounded-sm text-center cursor-pointer bg-gray-8yy00'
                                 : 'relative p-2 rounded-sm text-center cursor-pointer'
                             "
                             @click="changeSourceFile(file)"

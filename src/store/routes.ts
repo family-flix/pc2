@@ -30,6 +30,30 @@ const configure = {
               require: ["login"],
             },
           },
+          season_list: {
+            title: "电视剧列表",
+            pathname: "/season_list",
+            options: {
+              keep_alive: true,
+              animation: {
+                in: "fade-in",
+                out: "fade-out",
+              },
+              require: ["login"],
+            },
+          },
+          movie_list: {
+            title: "电影列表",
+            pathname: "/movie_list",
+            options: {
+              keep_alive: true,
+              animation: {
+                in: "fade-in",
+                out: "fade-out",
+              },
+              require: ["login"],
+            },
+          },
           search: {
             title: "搜索",
             pathname: "/home/search",

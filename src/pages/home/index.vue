@@ -72,6 +72,8 @@ function gotoPlayingPage(media: { id: string; type: MediaTypes }) {
         <div class="h-[1px] my-4 bg-gray-200"></div>
         <MediaSection
           title="电视剧"
+          :type="MediaTypes.Season"
+          :show-extra="true"
           :params="{ type: MediaTypes.Season, language: MediaOriginCountry.CN }"
           :app="app"
           :client="client"
@@ -81,6 +83,8 @@ function gotoPlayingPage(media: { id: string; type: MediaTypes }) {
         <div class="h-[1px] my-4 bg-gray-200"></div>
         <MediaSection
           title="电影"
+          :type="MediaTypes.Movie"
+          :show-extra="true"
           :params="{ type: MediaTypes.Movie, language: MediaOriginCountry.CN }"
           :app="app"
           :client="client"

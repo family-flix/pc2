@@ -394,6 +394,7 @@ export class ScrollViewCore extends BaseDomain<TheTypesOfEvents> {
   handleScrolling = () => {
     const scrollTop = this.getScrollTop();
     const isUp = scrollTop - this.preScrollY > 0;
+    // console.log('[DOMAIN]ui/scroll-view - handleScrolling', scrollTop, !this.isLoadingMore, this.getScrollHeight(), this.getScrollClientHeight(), isUp);
     if (!this.isLoadingMore) {
       const toBottom = this.getScrollHeight() - this.getScrollClientHeight() - scrollTop;
       if (toBottom <= this.threshold && isUp) {

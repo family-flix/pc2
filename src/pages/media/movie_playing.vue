@@ -229,14 +229,17 @@ class MoviePlayingPageView {
   $resolutionMenu = new PopoverCore({
     align: "center",
     side: "top",
+    toBody: false,
   });
   $sourceMenu = new PopoverCore({
     align: "center",
     side: "top",
+    toBody: false,
   });
   $rateMenu = new PopoverCore({
     align: "center",
     side: "top",
+    toBody: false,
   });
   $episode = new DynamicContentCore({
     value: 1,
@@ -252,6 +255,7 @@ class MoviePlayingPageView {
   }
 
   showControls() {
+    this.visible = true;
     app.showCursor();
     this.$top.show();
     this.$bottom.show();
@@ -259,6 +263,7 @@ class MoviePlayingPageView {
     this.$mask.show();
   }
   hideControls() {
+    this.visible = false;
     app.hideCursor();
     this.$top.hide({ destroy: false });
     this.$bottom.hide({ destroy: false });
@@ -266,10 +271,11 @@ class MoviePlayingPageView {
     this.$mask.hide({ destroy: false });
   }
   toggleControls() {
-    this.$top.toggle({ destroy: false });
-    this.$bottom.toggle({ destroy: false });
-    this.$control.toggle({ destroy: false });
-    this.$mask.toggle({ destroy: false });
+    if (this.visible) {
+      this.hideControls();
+      return;
+    }
+    this.showControls();
   }
   attemptToShowControls() {
     if (this.timer !== null) {
@@ -403,11 +409,6 @@ function handleClickElm(event: MouseEvent) {
   }
   if (elm === "screen") {
     $page.toggleControls();
-    if ($logic.$player.playing) {
-      app.hideCursor();
-    } else {
-      app.showCursor();
-    }
     return;
   }
   if (elm === "play-menu") {
@@ -453,10 +454,10 @@ function handleClickElm(event: MouseEvent) {
   }
 }
 function handleMouseMove() {
-  if ($logic.$player.playing) {
-    $page.showControls();
+  if ($page.visible === true) {
     return;
   }
+  $page.showControls();
 }
 onMounted(() => {
   hotkeys("space", (event, handler) => {

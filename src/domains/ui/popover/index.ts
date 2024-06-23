@@ -23,19 +23,21 @@ type TheTypesOfEvents = {
 };
 
 export class PopoverCore extends BaseDomain<TheTypesOfEvents> {
+  _side: Side;
+  _align: Align;
+  toBody = true;
+
   popper: PopperCore;
   present: PresenceCore;
   layer: DismissableLayerCore;
 
-  _side: Side;
-  _align: Align;
-
-  constructor(config: Partial<{ side: Side; align: Align }> = {}) {
+  constructor(config: Partial<{ side: Side; align: Align; toBody: boolean }> = {}) {
     super();
 
-    const { side = "bottom", align = "end" } = config;
+    const { side = "bottom", align = "end", toBody = true } = config;
     this._side = side;
     this._align = align;
+    this.toBody = toBody;
 
     this.popper = new PopperCore({
       side,
