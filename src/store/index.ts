@@ -24,6 +24,20 @@ import { PageKeys, routes, routesWithPathname } from "./routes";
 if (window.location.hostname === "media-t.funzm.com") {
   media_request.setEnv("dev");
 }
+onCreateRequest((ins) => {
+  ins.onFailed((e) => {
+    app.tip({
+      text: [e.message],
+    });
+    if (e.code === 900) {
+      history.push("root.login");
+    }
+  });
+  if (!ins.client) {
+    ins.client = client;
+  }
+});
+onCreateScrollView((ins) => ins.os === app.env);
 NavigatorCore.prefix = import.meta.env.BASE_URL;
 ImageCore.setPrefix(window.location.origin);
 
@@ -169,20 +183,6 @@ user.onTip((msg) => {
 user.onNeedUpdate(() => {
   app.tipUpdate();
 });
-onCreateRequest((ins) => {
-  ins.onFailed((e) => {
-    app.tip({
-      text: [e.message],
-    });
-    if (e.code === 900) {
-      history.push("root.login");
-    }
-  });
-  if (!ins.client) {
-    ins.client = client;
-  }
-});
-onCreateScrollView((ins) => ins.os === app.env);
 export const messageList = new ListCore(
   new RequestCore(fetchNotifications, {
     process: fetchNotificationsProcess,

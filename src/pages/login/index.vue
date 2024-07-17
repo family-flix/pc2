@@ -10,7 +10,7 @@ import { ButtonCore, InputCore } from "@/domains/ui/index";
 import { AuthCodeStep } from "@/constants/index";
 
 const props = defineProps<ViewComponentProps>();
-// const { app, view, storage, history, client } = props;
+const { history } = props;
 
 function Page(props: ViewComponentProps) {
   const { app, view, history, client } = props;
@@ -104,7 +104,7 @@ onMounted(async () => {
     if (props.app.env.prod === "develop") {
       return "https://media-t.funzm.com";
     }
-    return "https://media.funzm.com";
+    return history.$router.origin;
   })();
   createQRCode(`${hostname}/mobile/scan?code=${r.data.id}`, { width: 198, height: 198, ctx });
 });
