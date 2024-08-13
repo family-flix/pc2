@@ -171,6 +171,12 @@ export class MediaSourceFileCore extends BaseDomain<TheTypesOfEvents> {
     this.subtitles = subtitles;
     console.log("[DOMAIN]tv/index - loadSubtitle2 ", subtitles);
     const subtitleFile = (() => {
+      const matched2 = subtitles.find((s) => {
+        return s.language.join("&") === [MediaOriginCountry.CN, MediaOriginCountry.US].join("&");
+      });
+      if (matched2) {
+        return matched2;
+      }
       const matched = subtitles.find((s) => {
         return s.language.join("&") === MediaOriginCountry.CN;
       });
