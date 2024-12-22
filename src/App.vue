@@ -35,14 +35,14 @@ onMounted(() => {
 });
 
 const className = cn(
-  "absolute inset-0 bg-white opacity-100 dark:bg-black overflow-y-auto",
+  "absolute inset-0 bg-w-bg-2 opacity-100 overflow-y-auto",
   "animate-in fade-in",
   "data-[state=closed]:animate-out data-[state=closed]:fade-out"
 );
 </script>
 
 <template>
-  <div class="screen w-screen h-screen bg-white">
+  <div class="screen w-screen h-screen bg-w-bg-2">
     <StackRouteView
       v-for="(view, index) in subViews"
       :key="view.id"

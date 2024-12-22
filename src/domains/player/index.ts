@@ -1,5 +1,5 @@
 /**
- * @file 播放器
+ * @file 视频播放器
  */
 import { BaseDomain, Handler } from "@/domains/base";
 import { Application } from "@/domains/app";
@@ -85,12 +85,11 @@ type TheTypesOfEvents = {
   [Events.Ready]: void;
   [Events.BeforeLoadStart]: void;
   // EpisodeProfile
-  [Events.SourceLoaded]: Partial<{
+  [Events.SourceLoaded]: {
     width: number;
     height: number;
-    url: string;
-    currentTime: number;
-  }>;
+    duration: number;
+  };
   [Events.Loaded]: void;
   [Events.CanPlay]: void;
   [Events.Play]: void;
@@ -233,6 +232,12 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
       this._abstractNode.setVolume(this._curVolume);
     }
   };
+  getNode = () => {
+    if (!this._abstractNode) {
+      return null;
+    }
+    return this._abstractNode.$node;
+  };
   /** 手动播放过 */
   hasPlayed = false;
   /** 开始播放 */
@@ -278,7 +283,6 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     // console.log("[DOMAIN]player/index - changeRate", v);
     this._abstractNode.setRate(v);
     this.emit(Events.RateChange, { rate: v });
-    this.emit(Events.StateChange, { ...this.state });
   };
   tmpRate: null | number = null;
   changeRateTmp = (v: number) => {
@@ -475,7 +479,7 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     this.setCurrentTime(time);
     this.emit(Events.AfterAdjustCurrentTime, { time });
   };
-  async screenshot(): Promise<Result<string>> {
+  screenshot(): Result<string> {
     return Result.Err("请实现 screenshot 方法");
   }
   node = () => {
@@ -584,23 +588,23 @@ export class PlayerCore extends BaseDomain<TheTypesOfEvents> {
     });
   };
   handleLoadedmetadata = (values: { width: number; height: number; duration: number }) => {
-    const { width, height } = values;
+    const { width, height, duration } = values;
     this.setSize({ width, height });
-    this._duration = values.duration;
-    this.emit(Events.SourceLoaded, { width, height });
+    this._duration = duration;
+    this.emit(Events.SourceLoaded, { width, height, duration });
   };
   handleLoad = () => {
     this.emit(Events.Loaded);
   };
-  handleCanPlay = (values?: { duration: number }) => {
+  handleCanPlay = (values: Partial<{ duration: number }> = {}) => {
+    if (values.duration && this._duration !== values.duration) {
+      this._duration = values.duration;
+      this.emit(Events.DurationChange, values.duration);
+    }
     if (this._canPlay) {
       return;
     }
     this._canPlay = true;
-    if (values?.duration) {
-      this._duration = values.duration;
-      this.emit(Events.DurationChange, values.duration);
-    }
     this.emit(Events.CanPlay);
     this.emit(Events.StateChange, { ...this.state });
   };

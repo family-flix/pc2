@@ -92,7 +92,16 @@ export const app = new ExtendsApplication({
       }
       return Result.Err("can't goto layout");
     }
+    // 页面需要登录
     await user.loginWithTokenId({ token: router.query.token, tmp: Number(router.query.tmp) });
+    if (!user.isLogin) {
+      app.tip({
+        text: ["请先登录"],
+      });
+      history.push("root.login", { redirect: route.pathname });
+      return Result.Err("need login");
+    }
+    history.extra_query = { token: router.query.token, tmp: router.query.tmp };
     if (!user.isLogin) {
       app.tip({
         text: ["请先登录"],

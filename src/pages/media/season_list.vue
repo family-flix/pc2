@@ -106,7 +106,7 @@ seasonList.init();
         <div class="grid grid-cols-6 gap-4 mt-4 min-h-[634px] 2xl:grid-cols-7">
           <div
             v-for="media in tvResponse.dataSource"
-            class="relative w-[166px] bg-w-bg-2 cursor-pointer"
+            class="relative w-[166px] cursor-pointer"
             @click="handleClickMedia(media)"
           >
             <AspectRatio :ratio="10 / 15">

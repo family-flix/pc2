@@ -141,12 +141,12 @@ view.onCurViewChange((nextCurView) => {
 </script>
 
 <template>
-  <div class="layout flex flex-col w-full h-full bg-gray-100">
+  <div class="layout flex flex-col w-full h-full">
     <div class="w-[1080px] h-[130px] mx-auto 2xl:w-[1280px]">
       <div class="top-header-bar py-4 flex items-center justify-between">
         <div class="relative cursor-pointer" @click="clearSearching">
           <div class="z-10 absolute left-2 top-[18px] w-full h-[16px] rounded-md bg-green-500"></div>
-          <div class="z-20 relative text-3xl italic">FamilyFlix</div>
+          <div class="z-20 relative text-w-fg-0 text-3xl italic">FamilyFlix</div>
         </div>
         <div class="flex items-center space-x-4">
           <div class="relative">
@@ -199,7 +199,7 @@ view.onCurViewChange((nextCurView) => {
           </div> -->
         </div>
       </div>
-      <div class="h-[1px] bg-gray-200"></div>
+      <div class="h-[1px] bg-w-fg-1"></div>
       <div class="flex items-center justify-between w-full">
         <div class="nav flex items-center space-x-4">
           <div class="flex items-center py-4 space-x-2 cursor-pointer" @click="clearSearching">
@@ -243,10 +243,10 @@ view.onCurViewChange((nextCurView) => {
             <div class="w-full h-full scrollbar-hide overflow-y-auto bg-white opacity-100 dark:bg-black hide-scroll">
               <ScrollView :store="scroll">
                 <div class="w-[1080px] mx-auto mt-4 2xl:w-[1280px]">
-                  <div class="relative p-4 space-y-2 bg-gray-100 rounded-md">
+                  <div class="relative p-4 space-y-2 bg-w-bg--2 rounded-md">
                     <div class="absolute -right-20 top-0">
                       <div
-                        class="flex items-center justify-between p-4 rounded-full bg-gray-100 cursor-pointer"
+                        class="flex items-center justify-between p-4 rounded-full bg-w-bg-2 cursor-pointer"
                         @click="clearSearching"
                       >
                         <ChevronDown class="w-8 h-8" />
@@ -255,15 +255,15 @@ view.onCurViewChange((nextCurView) => {
                     <div class="field flex items-center">
                       <div class="w-[120px]">视剧类型</div>
                       <div class="flex space-x-2">
-                        <div class="py-1 px-2 rounded-md text-sm bg-gray-100 cursor-pointer">电视剧</div>
-                        <div class="py-1 px-2 rounded-md text-sm bg-gray-100 cursor-pointer">电影</div>
+                        <div class="py-1 px-2 rounded-md text-sm bg-w-bg-2 cursor-pointer">电视剧</div>
+                        <div class="py-1 px-2 rounded-md text-sm bg-w-bg-2 cursor-pointer">电影</div>
                       </div>
                     </div>
                     <div class="field flex items-center">
                       <div class="w-[120px]">题材</div>
                       <div class="flex space-x-2">
                         <template v-for="opt in MovieGenresOptions">
-                          <div class="py-1 px-2 rounded-md text-sm bg-gray-100 cursor-pointer">{{ opt.label }}</div>
+                          <div class="py-1 px-2 rounded-md text-sm bg-w-bg-2 cursor-pointer">{{ opt.label }}</div>
                         </template>
                       </div>
                     </div>
@@ -271,7 +271,7 @@ view.onCurViewChange((nextCurView) => {
                       <div class="w-[120px]">发行地区</div>
                       <div class="flex space-x-2">
                         <template v-for="opt in MovieOriginCountryOptions">
-                          <div class="py-1 px-2 rounded-md text-sm bg-gray-100 cursor-pointer">{{ opt.label }}</div>
+                          <div class="py-1 px-2 rounded-md text-sm bg-w-bg-2 cursor-pointer">{{ opt.label }}</div>
                         </template>
                       </div>
                     </div>
@@ -279,7 +279,7 @@ view.onCurViewChange((nextCurView) => {
                       <div class="w-[120px]">上映时间</div>
                       <div class="flex space-x-2">
                         <template v-for="opt in RecentlyYearOptions">
-                          <div class="py-1 px-2 rounded-md text-sm bg-gray-100 cursor-pointer">{{ opt.label }}</div>
+                          <div class="py-1 px-2 rounded-md text-sm bg-w-bg-2 cursor-pointer">{{ opt.label }}</div>
                         </template>
                       </div>
                     </div>

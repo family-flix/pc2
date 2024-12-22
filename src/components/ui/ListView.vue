@@ -38,6 +38,9 @@ const className = cn("relative", props.class);
         </div>
       </div>
     </template>
+    <show :when="response.initial">
+      <slot name="skeleton"></slot>
+    </show>
     <show :when="response.empty">
       <div class="w-full h-[480px] center flex items-center justify-center">
         <div class="flex flex-col items-center justify-center text-slate-500">
@@ -51,12 +54,11 @@ const className = cn("relative", props.class);
         </div>
       </div>
     </show>
-    <show :when="response.initial">
-      <slot name="skeleton"></slot>
+    <show :when="!response.empty">
+      <div :class="className">
+        <slot></slot>
+      </div>
     </show>
-    <div :class="className">
-      <slot></slot>
-    </div>
     <show :when="!response.noMore && !response.initial" name="bottom">
       <div class="mt-4 flex justify-center py-4 text-slate-500">
         <div class="mt-4 flex flex-col items-center space-x-2 cursor-pointer">

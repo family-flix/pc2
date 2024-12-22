@@ -1,13 +1,13 @@
 import dayjs from "dayjs";
 
-import { media_request } from "@/biz/requests/index";
 import { ListResponse, ListResponseWithCursor } from "@/biz/requests/types";
+import { media_request } from "@/biz/requests";
 import { TmpRequestResp } from "@/domains/request/utils";
 import { FetchParams } from "@/domains/list/typing";
 import { SubtitleFileResp } from "@/biz/subtitle/types";
 import { MediaResolutionTypes, MediaResolutionTypeTexts } from "@/biz/source/constants";
-import { Result } from "@/domains/result/index";
-import { RequestedResource, Unpacked, UnpackedResult } from "@/types/index";
+import { Result, UnpackedResult } from "@/domains/result/index";
+import { RequestedResource } from "@/types/index";
 import { MediaTypes, MediaOriginCountry, SeasonGenresTexts, SeasonMediaOriginCountryTexts } from "@/constants/index";
 import { episode_to_chinese_num, minute_to_hour2, relative_time_from_now } from "@/utils/index";
 
@@ -291,7 +291,7 @@ function normalizeEpisode(episode: SeasonAndCurEpisodeResp["sources"][number]) {
   return {
     id,
     name: (() => {
-      const r = /^第[0-9一二三四五六七八九十]{1,}[集期章]/;
+      const r = /^第[0-9一二三四五六七八九十]{1,}[集期章]：/;
       if (name.match(r)) {
         return name.replace(r, "");
       }
@@ -459,15 +459,17 @@ export function updatePlayHistory(body: {
   /** 视频当前时间 */
   current_time: number;
   duration?: number;
+  thumbnail: string;
   /** 视频源 */
   source_id: string;
 }) {
-  const { media_id, media_source_id, current_time, duration, source_id } = body;
+  const { media_id, media_source_id, current_time, duration, thumbnail, source_id } = body;
   return media_request.post<null>("/api/v2/wechat/history/update", {
     media_id,
     media_source_id,
     current_time,
     duration,
+    thumbnail,
     source_id,
   });
 }

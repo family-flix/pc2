@@ -69,7 +69,7 @@ function gotoPlayingPage(media: { id: string; type: MediaTypes }) {
           :storage="storage"
           :history="history"
         />
-        <div class="h-[1px] my-4 bg-gray-200"></div>
+        <div class="h-[1px] my-4 bg-w-fg-1"></div>
         <MediaSection
           title="电视剧"
           :type="MediaTypes.Season"
@@ -80,7 +80,7 @@ function gotoPlayingPage(media: { id: string; type: MediaTypes }) {
           :storage="storage"
           :history="history"
         />
-        <div class="h-[1px] my-4 bg-gray-200"></div>
+        <div class="h-[1px] my-4 bg-w-fg-1"></div>
         <MediaSection
           title="电影"
           :type="MediaTypes.Movie"

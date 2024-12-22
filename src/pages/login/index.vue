@@ -115,7 +115,7 @@ onMounted(async () => {
     <div class="w-[920px] mx-auto pt-12">
       <div class="relative w-[136px] cursor-pointer">
         <div class="z-10 absolute left-2 top-[36px] w-[280px] h-[32px] rounded-2xl bg-green-500"></div>
-        <div class="z-20 relative text-6xl italic">FamilyFlix</div>
+        <div class="z-20 relative text-w-bg-1 text-6xl italic">FamilyFlix</div>
       </div>
       <div class="flex mt-8 min-h-[480px] border rounded-xl shadow-xl">
         <div class="flex items-center justify-center w-[360px]">
@@ -177,11 +177,11 @@ onMounted(async () => {
           <div class="w-[320px]">
             <div className="space-y-4 rounded-md">
               <div>
-                <div>邮箱</div>
+                <div class="text-w-bg-1">邮箱</div>
                 <Input class="mt-1 bg-w-bg-0" :store="$page.ui.$username" />
               </div>
               <div>
-                <div>密码</div>
+                <div class="text-w-bg-1">密码</div>
                 <Input class="mt-1 bg-w-bg-0" :store="$page.ui.$password" />
               </div>
             </div>

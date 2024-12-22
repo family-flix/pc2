@@ -136,7 +136,7 @@ historyList.init();
   <div class="mt-4 min-w-[328px] min-h-[482px] space-y-2">
     <template v-for="history in response.dataSource">
       <div class="relative flex w-full cursor-pointer select-none">
-        <div class="relative flex bg-w-bg-2 rounded-lg" @click="handleClick(history)">
+        <div class="relative flex rounded-lg" @click="handleClick(history)">
           <div class="relative w-[160px] h-[90px] overflow-hidden rounded-md">
             <AspectRatio :ratio="10 / 15">
               <LazyImage
@@ -146,7 +146,7 @@ historyList.init();
               />
             </AspectRatio>
             <div class="absolute w-full top-0 flex flex-row-reverse items-center">
-              <div class="relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
+              <div class="relative z-20 p-2 text-[12px]">
                 {{ history.episodeCountText }}
               </div>
             </div>
@@ -157,8 +157,8 @@ historyList.init();
             </template>
           </div>
           <div class="flex-1 ml-2 w-full">
-            <div class="overflow-hidden max-w-full text-xl text-w-fg-0 truncate">{{ history.name }}</div>
-            <div class="flex items-center text-w-fg-1">
+            <div class="overflow-hidden max-w-full text-xl truncate">{{ history.name }}</div>
+            <div class="flex items-center">
               {{ history.updated }}
               <template v-if="!!history.episodeText">
                 <p class="mx-1">·</p>

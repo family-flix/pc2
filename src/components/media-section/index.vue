@@ -110,8 +110,8 @@ seasonList.init();
             <div
               :class="
                 extra.language === language
-                  ? 'px-2 py-1 rounded bg-green-100 cursor-pointer'
-                  : 'px-2 py-1 rounded bg-gray-100 cursor-pointer'
+                  ? 'px-2 py-1 rounded bg-w-fg-1 text-w-bg-0 cursor-pointer'
+                  : 'px-2 py-1 rounded bg-w-bg-1 cursor-pointer'
               "
               data-elm="language"
               :data-value="language"
@@ -137,7 +137,7 @@ seasonList.init();
     <div class="grid grid-cols-6 gap-4 mt-4 min-h-[634px] 2xl:grid-cols-7">
       <div
         v-for="media in tvResponse.dataSource"
-        class="relative w-[166px] bg-w-bg-2 cursor-pointer"
+        class="relative w-[166px] cursor-pointer"
         @click="handleClickMedia(media)"
       >
         <AspectRatio :ratio="10 / 15">
@@ -154,14 +154,14 @@ seasonList.init();
         <div class="absolute top-2 right-2 space-y-2">
           <template v-if="media.vote">
             <div className="flex flex-row-reverse items-center w-full ">
-              <div className="huizhang huizhang--blue relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
+              <div className="huizhang huizhang--blue relative z-20 p-2 text-[12px] text-w-bg-0">
                 {{ media.vote }}
               </div>
             </div>
           </template>
           <template v-if="media.episode_count_text">
             <div className="flex flex-row-reverse items-center w-full">
-              <div className="huizhang relative z-20 p-2 text-[12px] text-w-bg-0 dark:text-w-fg-0">
+              <div className="huizhang relative z-20 p-2 text-[12px] text-w-bg-0">
                 {{ media.episode_count_text }}
               </div>
             </div>
