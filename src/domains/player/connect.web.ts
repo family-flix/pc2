@@ -117,8 +117,12 @@ export function connect($video: HTMLVideoElement, player: PlayerCore) {
       return Result.Err("getContext 失败");
     }
     context.drawImage($video, 0, 0, $canvas.width, $canvas.height);
-    const dataURL = $canvas.toDataURL("image/png");
-    return Result.Ok(dataURL.split(",")[1]);
+    try {
+      const dataURL = $canvas.toDataURL("image/png");
+      return Result.Ok(dataURL.split(",")[1]);
+    } catch (err) {
+      return Result.Err((err as Error).message);
+    }
   };
   player.bindAbstractNode({
     $node: $video,
